@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
 > **Última actualización:** 2026-07-02
-> **Estado general:** 🔄 Fase 4 en progreso
+> **Estado general:** 🔄 Fase 5 en progreso
 
 ---
 
@@ -26,7 +26,7 @@
 - [x] Fase 1 — Base de datos (tablas SQL Server)
 - [x] Fase 2 — Autenticación (NextAuth + LDAP)
 - [x] Fase 3 — Webhook WhatsApp (recibir + enviar)
-- [ ] Fase 4 — Ad Attribution (Meta Graph API)
+- [x] Fase 4 — Ad Attribution (Meta Graph API)
 - [ ] Fase 5 — Flow Engine (auto-respuesta)
 - [ ] Fase 6 — API REST
 - [ ] Fase 7 — Frontend
@@ -139,9 +139,9 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | # | Archivo | Propósito | Estado |
 |---|---------|-----------|--------|
-| 4.1 | `src/lib/meta-ads/attribution.ts` | `getAdAttribution(ad_id)` con cache | ⬜ |
-| 4.2 | `src/lib/meta-ads/graph-api.ts` | Llamadas a Graph API | ⬜ |
-| 4.3 | Integración en webhook | Guardar `ad_id`, `campaign_id` en mensaje | ⬜ |
+| 4.1 | `src/lib/meta-ads/attribution.ts` | `getAdAttribution(ad_id)` con cache | ✅ |
+| 4.2 | `src/lib/meta-ads/graph-api.ts` | Llamadas a Graph API | ✅ |
+| 4.3 | Integración en webhook | Guardar `ad_id`, `campaign_id` en mensaje | ✅ |
 
 ---
 
@@ -256,4 +256,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** ⬜ Fase 4 — Ad Attribution
+> **Fase actual:** ⬜ Fase 5 — Flow Engine

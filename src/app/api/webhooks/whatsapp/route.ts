@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { verifyWebhook } from "@/lib/whatsapp/verify";
 import { parsePayload } from "@/lib/whatsapp/receive";
 import { isDuplicate } from "@/lib/webhook/idempotency";
+import { getAdAttribution } from "@/lib/meta-ads/attribution";
 import { query, execute } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
@@ -62,7 +63,20 @@ export async function POST(req: NextRequest) {
 
     // Procesar mensajes entrantes
     for (const msg of messages) {
-      const agenciaId = 1; // TODO: mapear por numero de telefono o ad_id
+      let agenciaId = 1; // fallback si no se puede atribuir
+      let adId: string | null = null;
+      let campaignId: string | null = null;
+
+      // Attribution via ad_id
+      if (msg.ad_id) {
+        const attribution = await getAdAttribution(msg.ad_id);
+        if (attribution) {
+          adId = attribution.ad_id;
+          campaignId = attribution.campaign_id;
+          if (attribution.agency_id) agenciaId = attribution.agency_id;
+        }
+      }
+
       const plataforma = "whatsapp";
 
       // Buscar o crear conversacion
@@ -76,10 +90,10 @@ export async function POST(req: NextRequest) {
       let convId: number;
       if (conversaciones.length === 0) {
         const result = await execute(
-          `INSERT INTO lg_conversaciones (agencia_id, plataforma, contacto_externo_id, estado)
+          `INSERT INTO lg_conversaciones (agencia_id, plataforma, contacto_externo_id, ad_id, campaign_id, estado)
            OUTPUT INSERTED.id
-           VALUES (@agenciaId, @plataforma, @contacto, 'auto_respondiendo')`,
-          { agenciaId, plataforma, contacto: msg.wa_id }
+           VALUES (@agenciaId, @plataforma, @contacto, @adId, @campaignId, 'auto_respondiendo')`,
+          { agenciaId, plataforma, contacto: msg.wa_id, adId, campaignId }
         );
         const inserted = result.recordset as Array<{ id: number }>;
         convId = inserted[0]!.id;
@@ -101,7 +115,9 @@ export async function POST(req: NextRequest) {
 
       // Guardar mensaje
       const metadata = JSON.stringify({
-        ad_id: msg.ad_id ?? null,
+        ad_id: adId,
+        campaign_id: campaignId,
+        raw_ad_id: msg.ad_id ?? null,
         context_message_id: msg.context_message_id ?? null,
       });
 
