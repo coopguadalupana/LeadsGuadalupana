@@ -7,14 +7,17 @@ import { processMessage } from "@/lib/flows/integration";
 import { query, execute } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+  const { searchParams } = req.nextUrl;
   const mode = searchParams.get("hub.mode");
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
   const result = verifyWebhook(mode, token, challenge);
-  if (result) {
-    return new Response(result, { status: 200 });
+  if (result !== null) {
+    return new Response(result, {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 
   return new Response("Verification failed", { status: 403 });
