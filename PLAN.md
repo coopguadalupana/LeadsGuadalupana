@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
 > **Última actualización:** 2026-07-02
-> **Estado general:** 🔄 Fase 7 en progreso
+> **Estado general:** ⬜ Pendiente configuracion inicial
 
 ---
 
@@ -29,7 +29,7 @@
 - [x] Fase 4 — Ad Attribution (Meta Graph API)
 - [x] Fase 5 — Flow Engine (auto-respuesta)
 - [x] Fase 6 — API REST
-- [ ] Fase 7 — Frontend
+- [x] Fase 7 — Frontend
 - [ ] Fase 8 — Instagram & Facebook Messenger
 - [ ] Fase 9 — Despliegue (Nginx + PM2)
 - [ ] Fase 10 — Testing
@@ -192,13 +192,13 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | Ruta | Página | Estado |
 |------|--------|--------|
-| `/app/(agency)/inbox` | Lista de conversaciones con filtros | ⬜ |
-| `/app/(agency)/inbox/[id]` | Chat individual con contacto | ⬜ |
-| `/app/(agency)/leads` | Tabla de leads con calificación | ⬜ |
-| `/app/(agency)/flows` | Lista de flows auto-respuesta | ⬜ |
-| `/app/(agency)/flows/[id]` | Editor de flow (triggers + pasos) | ⬜ |
-| `/app/(agency)/ads` | Dashboard rendimiento anuncios | ⬜ |
-| `/app/(agency)/config` | Configuración de agencia | ⬜ |
+| `/app/inbox` | Lista de conversaciones con filtros | ✅ |
+| `/app/inbox/[id]` | Chat individual con contacto | ✅ |
+| `/app/leads` | Tabla de leads con calificación | ✅ |
+| `/app/flows` | Lista de flows auto-respuesta | ✅ |
+| `/app/flows/[id]` | Editor de flow (triggers + pasos) | ✅ |
+| `/app/ads` | Dashboard rendimiento anuncios | ✅ |
+| `/app/config` | Configuración de agencia | ✅ |
 
 ---
 
@@ -256,4 +256,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** ⬜ Fase 7 — Frontend
+> **Fase actual:** Fases 0-7 completadas. Pendiente: deploy, conexion SQL Server y configuracion Meta webhook.
