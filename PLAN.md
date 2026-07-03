@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
 > **Última actualización:** 2026-07-02
-> **Estado general:** 🔄 Fase 6 en progreso
+> **Estado general:** 🔄 Fase 7 en progreso
 
 ---
 
@@ -28,7 +28,7 @@
 - [x] Fase 3 — Webhook WhatsApp (recibir + enviar)
 - [x] Fase 4 — Ad Attribution (Meta Graph API)
 - [x] Fase 5 — Flow Engine (auto-respuesta)
-- [ ] Fase 6 — API REST
+- [x] Fase 6 — API REST
 - [ ] Fase 7 — Frontend
 - [ ] Fase 8 — Instagram & Facebook Messenger
 - [ ] Fase 9 — Despliegue (Nginx + PM2)
@@ -172,17 +172,17 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | Endpoint | Métodos | Propósito | Estado |
 |----------|---------|-----------|--------|
-| `/api/conversations` | GET | Inbox scoped por agencia | ⬜ |
-| `/api/conversations/[id]` | GET | Detalle + mensajes | ⬜ |
-| `/api/conversations/[id]/send` | POST | Enviar mensaje como agente | ⬜ |
-| `/api/conversations/[id]/assign` | PATCH | Asignar agente | ⬜ |
-| `/api/leads` | GET, POST | CRUD leads | ⬜ |
-| `/api/leads/[id]` | PATCH | Actualizar lead | ⬜ |
-| `/api/flows` | GET, POST | CRUD flows | ⬜ |
-| `/api/flows/[id]` | PUT, DELETE | Editar/eliminar flow | ⬜ |
-| `/api/ads/performance` | GET | Dashboard ads | ⬜ |
-| `/api/agency/config` | GET, PATCH | Config agencia | ⬜ |
-| `/api/health` | GET | Health check | ⬜ |
+| `/api/conversations` | GET | Inbox scoped por agencia | ✅ |
+| `/api/conversations/[id]` | GET | Detalle + mensajes | ✅ |
+| `/api/conversations/[id]/send` | POST | Enviar mensaje como agente | ✅ |
+| `/api/conversations/[id]/assign` | PATCH | Asignar agente | ✅ |
+| `/api/leads` | GET, POST | CRUD leads | ✅ |
+| `/api/leads/[id]` | PATCH | Actualizar lead | ✅ |
+| `/api/flows` | GET, POST | CRUD flows | ✅ |
+| `/api/flows/[id]` | PUT, DELETE | Editar/eliminar flow | ✅ |
+| `/api/ads/performance` | GET | Dashboard ads | ✅ |
+| `/api/agency/config` | GET, PATCH | Config agencia | ✅ |
+| `/api/health` | GET | Health check | ✅ |
 
 ---
 
@@ -256,4 +256,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** ⬜ Fase 6 — API REST
+> **Fase actual:** ⬜ Fase 7 — Frontend
