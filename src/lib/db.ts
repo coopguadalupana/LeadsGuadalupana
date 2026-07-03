@@ -56,7 +56,7 @@ export async function getPool(): Promise<sql.ConnectionPool> {
   return pool;
 }
 
-export async function query<T extends Record<string, unknown>>(
+export async function query<T>(
   sqlQuery: string,
   params?: Record<string, unknown>
 ): Promise<T[]> {

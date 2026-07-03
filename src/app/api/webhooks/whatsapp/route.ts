@@ -3,6 +3,7 @@ import { verifyWebhook } from "@/lib/whatsapp/verify";
 import { parsePayload } from "@/lib/whatsapp/receive";
 import { isDuplicate } from "@/lib/webhook/idempotency";
 import { getAdAttribution } from "@/lib/meta-ads/attribution";
+import { processMessage } from "@/lib/flows/integration";
 import { query, execute } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
@@ -141,7 +142,9 @@ export async function POST(req: NextRequest) {
         }
       );
 
-      // TODO: Fase 5 - disparar FlowEngine.processMessage()
+      // Procesar auto-respuesta
+      const textContent = msg.text ?? msg.image_caption ?? "";
+      await processMessage(convId, agenciaId, msg.wa_id, textContent);
     }
 
     return new Response("OK", { status: 200 });

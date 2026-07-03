@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
 > **Última actualización:** 2026-07-02
-> **Estado general:** 🔄 Fase 5 en progreso
+> **Estado general:** 🔄 Fase 6 en progreso
 
 ---
 
@@ -27,7 +27,7 @@
 - [x] Fase 2 — Autenticación (NextAuth + LDAP)
 - [x] Fase 3 — Webhook WhatsApp (recibir + enviar)
 - [x] Fase 4 — Ad Attribution (Meta Graph API)
-- [ ] Fase 5 — Flow Engine (auto-respuesta)
+- [x] Fase 5 — Flow Engine (auto-respuesta)
 - [ ] Fase 6 — API REST
 - [ ] Fase 7 — Frontend
 - [ ] Fase 8 — Instagram & Facebook Messenger
@@ -151,10 +151,10 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | # | Archivo | Propósito | Estado |
 |---|---------|-----------|--------|
-| 5.1 | `src/lib/flows/types.ts` | Tipos: `Flow`, `FlowStep`, `FlowTrigger`, `StepAction` | ⬜ |
-| 5.2 | `src/lib/flows/engine.ts` | `processMessage(conversacion, mensaje)` | ⬜ |
-| 5.3 | `src/lib/flows/actions.ts` | Acciones: sendText, askQuestion, saveLead, escalate, etc. | ⬜ |
-| 5.4 | `src/lib/flows/integration.ts` | Hook webhook → flow engine | ⬜ |
+| 5.1 | `src/lib/flows/types.ts` | Tipos: `Flow`, `FlowStep`, `FlowTrigger`, `StepAction` | ✅ |
+| 5.2 | `src/lib/flows/engine.ts` | `processMessage(conversacion, mensaje)` | ✅ |
+| 5.3 | `src/lib/flows/actions.ts` | Acciones: sendText, askQuestion, saveLead, escalate, etc. | ✅ (integrado en engine) |
+| 5.4 | `src/lib/flows/integration.ts` | Hook webhook → flow engine | ✅ |
 
 **Acciones del flow:**
 - `send_text` — enviar mensaje
@@ -256,4 +256,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** ⬜ Fase 5 — Flow Engine
+> **Fase actual:** ⬜ Fase 6 — API REST
