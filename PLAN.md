@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
 > **Última actualización:** 2026-07-02
-> **Estado general:** 🔄 Fase 1 en progreso
+> **Estado general:** 🔄 Fase 2 en progreso
 
 ---
 
@@ -23,7 +23,7 @@
 
 ### ✅ Requisitos cumplidos
 - [x] Fase 0 — Proyecto inicial (scaffolding, config, pool DB)
-- [ ] Fase 1 — Base de datos (tablas SQL Server)
+- [x] Fase 1 — Base de datos (tablas SQL Server)
 - [ ] Fase 2 — Autenticación (NextAuth + LDAP)
 - [ ] Fase 3 — Webhook WhatsApp (recibir + enviar)
 - [ ] Fase 4 — Ad Attribution (Meta Graph API)
@@ -85,13 +85,13 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | Tabla | Columnas clave | Estado |
 |-------|---------------|--------|
-| `lg_agencias` | `id INT PK IDENTITY`, `nombre`, `subou_ldap`, `config` (NVARCHAR/JSON), `activa` | ⬜ |
-| `lg_usuarios` | `id`, `ldap_sam`, `nombre`, `email`, `agencia_id FK`, `rol` | ⬜ |
-| `lg_conversaciones` | `id`, `agencia_id FK`, `plataforma`, `contacto_externo_id`, `ad_id`, `campaign_id`, `estado`, `flow_state` (JSON), `creado`, `actualizado` | ⬜ |
-| `lg_mensajes` | `id`, `conversacion_id FK`, `message_id` (UNIQUE por conv), `role`, `tipo`, `contenido` (JSON), `metadata` (JSON), `recibido`, `procesado` | ⬜ |
-| `lg_leads` | `id`, `conversacion_id FK`, `agencia_id FK`, `nombre`, `telefono`, `email`, `calificacion`, `notas`, `asignado_a FK` | ⬜ |
-| `lg_flows` | `id`, `agencia_id FK`, `nombre`, `activo`, `trigger` (JSON), `pasos` (JSON), `version` | ⬜ |
-| `lg_ads_cache` | `ad_id PK`, `campaign_id`, `campaign_name`, `agency_id`, `ultima_actualizacion` | ⬜ |
+| `lg_agencias` | `id INT PK IDENTITY`, `nombre`, `subou_ldap`, `config` (NVARCHAR/JSON), `activa` | ✅ |
+| `lg_usuarios` | `id`, `ldap_sam`, `nombre`, `email`, `agencia_id FK`, `rol` | ✅ |
+| `lg_conversaciones` | `id`, `agencia_id FK`, `plataforma`, `contacto_externo_id`, `ad_id`, `campaign_id`, `estado`, `flow_state` (JSON), `creado`, `actualizado` | ✅ |
+| `lg_mensajes` | `id`, `conversacion_id FK`, `message_id` (UNIQUE por conv), `role`, `tipo`, `contenido` (JSON), `metadata` (JSON), `recibido`, `procesado` | ✅ |
+| `lg_leads` | `id`, `conversacion_id FK`, `agencia_id FK`, `nombre`, `telefono`, `email`, `calificacion`, `notas`, `asignado_a FK` | ✅ |
+| `lg_flows` | `id`, `agencia_id FK`, `nombre`, `activo`, `trigger` (JSON), `pasos` (JSON), `version` | ✅ |
+| `lg_ads_cache` | `ad_id PK`, `campaign_id`, `campaign_name`, `agency_id`, `ultima_actualizacion` | ✅ |
 
 **Script DDL:** `database/schema.sql`
 
@@ -256,4 +256,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** ⬜ Fase 1 — Base de datos
+> **Fase actual:** ⬜ Fase 2 — Autenticación
