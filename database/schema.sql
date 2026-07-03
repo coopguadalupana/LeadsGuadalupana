@@ -55,7 +55,7 @@ CREATE TABLE lg_mensajes (
     id              INT IDENTITY(1,1) PRIMARY KEY,
     conversacion_id INT             NOT NULL REFERENCES lg_conversaciones(id),
     message_id      NVARCHAR(100)   NULL, -- ID de Meta (para idempotencia)
-    role            NVARCHAR(10)    NOT NULL CHECK (role IN ('cliente','agente','bot')),
+    [role]          NVARCHAR(10)    NOT NULL CHECK ([role] IN ('cliente','agente','bot')),
     tipo            NVARCHAR(20)    NOT NULL CHECK (tipo IN ('texto','imagen','audio','video','documento','template','interactivo','ubicacion','contacto','sticker','desconocido')),
     contenido       NVARCHAR(MAX)   NOT NULL, -- JSON: texto, URLs, caption, etc.
     metadata        NVARCHAR(MAX)   NULL, -- JSON: ad_id, campaign_id, platform_data
@@ -91,7 +91,7 @@ CREATE TABLE lg_flows (
     agencia_id      INT             NOT NULL REFERENCES lg_agencias(id),
     nombre          NVARCHAR(200)   NOT NULL,
     activo          BIT             NOT NULL DEFAULT 0,
-    trigger         NVARCHAR(MAX)   NOT NULL, -- JSON: keywords, regex, horarios
+    [trigger]       NVARCHAR(MAX)   NOT NULL, -- JSON: keywords, regex, horarios
     pasos           NVARCHAR(MAX)   NOT NULL, -- JSON: array de pasos con acciones
     version         INT             NOT NULL DEFAULT 1,
     creado          DATETIME2       NOT NULL DEFAULT GETDATE(),
