@@ -1,0 +1,94 @@
+interface SendTextParams {
+  to: string;
+  text: string;
+  previewUrl?: boolean;
+}
+
+interface SendTemplateParams {
+  to: string;
+  templateName: string;
+  languageCode?: string;
+  components?: Record<string, unknown>;
+}
+
+interface SendInteractiveParams {
+  to: string;
+  type: "button" | "list";
+  header?: string;
+  body: string;
+  footer?: string;
+  buttons?: Array<{ id: string; title: string }>;
+  sections?: Array<{ title: string; rows: Array<{ id: string; title: string; description?: string }> }>;
+}
+
+interface WhatsAppResponse {
+  messaging_product: "whatsapp";
+  contacts: Array<{ input: string; wa_id: string }>;
+  messages: Array<{ id: string }>;
+}
+
+async function apiCall(payload: Record<string, unknown>): Promise<WhatsAppResponse> {
+  const token = process.env.WHATSAPP_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_ID;
+  const apiVersion = process.env.WHATSAPP_API_VERSION ?? "v25.0";
+
+  if (!token || !phoneId) {
+    throw new Error("Missing WHATSAPP_TOKEN or WHATSAPP_PHONE_ID");
+  }
+
+  const url = `https://graph.facebook.com/${apiVersion}/${phoneId}/messages`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ messaging_product: "whatsapp", ...payload }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`WhatsApp API error ${res.status}: ${err}`);
+  }
+
+  return res.json();
+}
+
+export async function sendText(params: SendTextParams): Promise<WhatsAppResponse> {
+  return apiCall({
+    to: params.to,
+    type: "text",
+    text: { body: params.text, preview_url: params.previewUrl ?? false },
+  });
+}
+
+export async function sendTemplate(params: SendTemplateParams): Promise<WhatsAppResponse> {
+  return apiCall({
+    to: params.to,
+    type: "template",
+    template: {
+      name: params.templateName,
+      language: { code: params.languageCode ?? "es" },
+      ...(params.components ? { components: params.components } : {}),
+    },
+  });
+}
+
+export async function sendInteractive(params: SendInteractiveParams): Promise<WhatsAppResponse> {
+  const interactive: Record<string, unknown> = {
+    type: params.type,
+    body: { text: params.body },
+  };
+
+  if (params.header) interactive.header = { type: "text", text: params.header };
+  if (params.footer) interactive.footer = { text: params.footer };
+  if (params.buttons) interactive.action = { buttons: params.buttons.map((b) => ({ type: "reply", reply: b })) };
+  if (params.sections) interactive.action = { sections: params.sections };
+
+  return apiCall({ to: params.to, type: "interactive", interactive });
+}
+
+export function markAsRead(messageId: string): Promise<WhatsAppResponse> {
+  return apiCall({ status: "read", message_id: messageId });
+}

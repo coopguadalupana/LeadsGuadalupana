@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
 > **Última actualización:** 2026-07-02
-> **Estado general:** 🔄 Fase 3 en progreso
+> **Estado general:** 🔄 Fase 4 en progreso
 
 ---
 
@@ -25,7 +25,7 @@
 - [x] Fase 0 — Proyecto inicial (scaffolding, config, pool DB)
 - [x] Fase 1 — Base de datos (tablas SQL Server)
 - [x] Fase 2 — Autenticación (NextAuth + LDAP)
-- [ ] Fase 3 — Webhook WhatsApp (recibir + enviar)
+- [x] Fase 3 — Webhook WhatsApp (recibir + enviar)
 - [ ] Fase 4 — Ad Attribution (Meta Graph API)
 - [ ] Fase 5 — Flow Engine (auto-respuesta)
 - [ ] Fase 6 — API REST
@@ -123,11 +123,11 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | # | Archivo | Propósito | Estado |
 |---|---------|-----------|--------|
-| 3.1 | `src/app/api/webhooks/whatsapp/route.ts` | GET verify + POST receive | ⬜ |
-| 3.2 | `src/lib/whatsapp/verify.ts` | Validar `hub.verify_token` | ⬜ |
-| 3.3 | `src/lib/whatsapp/receive.ts` | Parsear payload, validar firma, extraer datos | ⬜ |
-| 3.4 | `src/lib/whatsapp/send.ts` | Enviar mensajes via API | ⬜ |
-| 3.5 | `src/lib/webhook/idempotency.ts` | Detección de duplicados por `message_id` | ⬜ |
+| 3.1 | `src/app/api/webhooks/whatsapp/route.ts` | GET verify + POST receive | ✅ |
+| 3.2 | `src/lib/whatsapp/verify.ts` | Validar `hub.verify_token` | ✅ |
+| 3.3 | `src/lib/whatsapp/receive.ts` | Parsear payload, validar firma, extraer datos | ✅ |
+| 3.4 | `src/lib/whatsapp/send.ts` | Enviar mensajes via API | ✅ |
+| 3.5 | `src/lib/webhook/idempotency.ts` | Detección de duplicados por `message_id` | ✅ |
 
 **Endpoint:** `POST/GET https://servicios.guadalupana.com.gt/api/webhooks/whatsapp`
 
@@ -256,4 +256,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** ⬜ Fase 3 — Webhook WhatsApp
+> **Fase actual:** ⬜ Fase 4 — Ad Attribution
