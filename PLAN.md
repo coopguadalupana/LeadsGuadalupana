@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
 > **Última actualización:** 2026-07-02
-> **Estado general:** 🔄 Fase 2 en progreso
+> **Estado general:** 🔄 Fase 3 en progreso
 
 ---
 
@@ -24,7 +24,7 @@
 ### ✅ Requisitos cumplidos
 - [x] Fase 0 — Proyecto inicial (scaffolding, config, pool DB)
 - [x] Fase 1 — Base de datos (tablas SQL Server)
-- [ ] Fase 2 — Autenticación (NextAuth + LDAP)
+- [x] Fase 2 — Autenticación (NextAuth + LDAP)
 - [ ] Fase 3 — Webhook WhatsApp (recibir + enviar)
 - [ ] Fase 4 — Ad Attribution (Meta Graph API)
 - [ ] Fase 5 — Flow Engine (auto-respuesta)
@@ -103,10 +103,10 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | # | Archivo | Propósito | Estado |
 |---|---------|-----------|--------|
-| 2.1 | `src/app/api/auth/[...nextauth]/route.ts` | Route handler de NextAuth | ⬜ |
-| 2.2 | `src/lib/auth/ldap-provider.ts` | Provider LDAP custom (bind, search, parse OU) | ⬜ |
-| 2.3 | `src/lib/auth/auth-options.ts` | Config NextAuth (callbacks JWT/session) | ⬜ |
-| 2.4 | `src/middleware.ts` | Proteger `/app/*`, redirect a login | ⬜ |
+| 2.1 | `src/app/api/auth/[...nextauth]/route.ts` | Route handler de NextAuth | ✅ |
+| 2.2 | `src/lib/auth/ldap-provider.ts` | Provider LDAP custom (bind, search, parse OU) | ✅ |
+| 2.3 | `src/lib/auth/auth-options.ts` | Config NextAuth (callbacks JWT/session) | ✅ |
+| 2.4 | `src/middleware.ts` | Proteger `/app/*`, redirect a login | ✅ |
 
 **Flujo LDAP:**
 1. Bind servicio → buscar `sAMAccountName` en `OU=Gerencia Negocios,DC=guadalupana,DC=com,DC=gt`
@@ -256,4 +256,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** ⬜ Fase 2 — Autenticación
+> **Fase actual:** ⬜ Fase 3 — Webhook WhatsApp
