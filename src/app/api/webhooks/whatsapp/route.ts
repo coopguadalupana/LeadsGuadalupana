@@ -92,20 +92,20 @@ export async function POST(req: NextRequest) {
 
       const plataforma = "whatsapp";
 
-      // Buscar o crear conversacion (con manejo de race condition)
+      // Buscar o crear conversacion, reabriendo cerradas (mismo cliente, mismo hilo)
       let convId: number | null = null;
       const existing = await query<{ id: number; estado: string }>(
         `SELECT id, estado FROM lg_conversaciones
          WHERE agencia_id = @agenciaId AND contacto_externo_id = @waId
-           AND estado != 'cerrada'`,
+         ORDER BY CASE WHEN estado != 'cerrada' THEN 0 ELSE 1 END, creado DESC`,
         { agenciaId, waId: msg.wa_id }
       );
 
       if (existing.length > 0) {
         convId = existing[0]!.id;
-        if (existing[0]!.estado === "en_curso") {
+        if (existing[0]!.estado === "en_curso" || existing[0]!.estado === "cerrada") {
           await execute(
-            `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = GETDATE()
+            `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = GETDATE(), motivo_cierre = NULL
              WHERE id = @id`,
             { id: convId }
           );
@@ -120,11 +120,10 @@ export async function POST(req: NextRequest) {
           );
           convId = (result.recordset as Array<{ id: number }>)[0]!.id;
         } catch {
-          // Race condition: otro webhook creo la conv justo ahora. Re-intentar SELECT.
           const retry = await query<{ id: number; estado: string }>(
             `SELECT id, estado FROM lg_conversaciones
              WHERE agencia_id = @agenciaId AND contacto_externo_id = @waId
-               AND estado != 'cerrada'`,
+             ORDER BY CASE WHEN estado != 'cerrada' THEN 0 ELSE 1 END, creado DESC`,
             { agenciaId, waId: msg.wa_id }
           );
           if (retry.length === 0) throw new Error("No se pudo crear ni encontrar la conversacion");
