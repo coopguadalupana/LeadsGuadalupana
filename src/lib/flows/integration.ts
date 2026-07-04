@@ -9,11 +9,13 @@ import {
 import type { Flow, FlowState } from "@/lib/flows/types";
 
 function parseFlow(raw: Record<string, unknown>): Flow {
-  return {
+  const parsed = {
     ...raw,
     trigger: typeof raw.trigger === "string" ? JSON.parse(raw.trigger as string) : raw.trigger,
     pasos: typeof raw.pasos === "string" ? JSON.parse(raw.pasos as string) : raw.pasos,
   } as unknown as Flow;
+  console.log("parseFlow result:", JSON.stringify({ nombre: parsed.nombre, trigger: parsed.trigger, pasos: parsed.pasos?.length }));
+  return parsed;
 }
 
 export async function processMessage(
@@ -67,9 +69,15 @@ export async function processMessage(
     { agenciaId }
   );
 
+  console.log("processMessage: buscando flows activos para agencia", agenciaId, "mensaje:", mensajeTexto);
+  console.log("processMessage: flows encontrados:", raw.length);
+
   for (const row of raw) {
     const flow = parseFlow(row);
-    if (matchTrigger(flow, mensajeTexto)) {
+    const match = matchTrigger(flow, mensajeTexto);
+    console.log("processMessage: evaluando flow", flow.nombre, "match:", match);
+    if (match) {
+      console.log("processMessage: flow disparado!", flow.nombre);
       currentState = createInitialState(flow);
       const { newState, finalizado } = await executeFlow(
         flow,
@@ -78,6 +86,7 @@ export async function processMessage(
         waId,
         mensajeTexto
       );
+      console.log("processMessage: ejecucion completada, finalizado:", finalizado);
       currentState = finalizado ? null : newState;
       await saveState(conversacionId, currentState);
       return;
