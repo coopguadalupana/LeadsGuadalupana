@@ -39,7 +39,7 @@ export async function executeFlow(
         to: waId,
         type: "button",
         body: texto,
-        buttons: (pasoActual.botones ?? []).map((b) => ({ id: b.toLowerCase().replace(/\s+/g, "_"), title: b })),
+        buttons: (pasoActual.botones ?? []).map((b, i) => ({ id: `opt_${i}`, title: b })),
       });
       currentState.historial.push({ pasoId: pasoActual.id, accion: "send_interactive" });
       if (pasoActual.siguiente) {
