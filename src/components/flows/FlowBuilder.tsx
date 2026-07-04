@@ -33,6 +33,8 @@ interface FlowBuilderProps {
 
 const STEP_TYPES: Array<{ tipo: StepType; label: string; color: string; icon: string }> = [
   { tipo: "send_text", label: "Enviar texto", color: "#0e5bb0", icon: "💬" },
+  { tipo: "send_template", label: "Enviar plantilla", color: "#0e5bb0", icon: "📋" },
+  { tipo: "send_interactive", label: "Enviar botones", color: "#0693e3", icon: "🔘" },
   { tipo: "ask_question", label: "Preguntar", color: "#27a536", icon: "❓" },
   { tipo: "conditional", label: "Condicion", color: "#fcb900", icon: "🔀" },
   { tipo: "save_lead_field", label: "Guardar campo", color: "#974df3", icon: "💾" },
@@ -279,7 +281,7 @@ export default function FlowBuilder({
       </div>
 
       {/* Center: React Flow canvas */}
-      <div ref={reactFlowWrapper} className="flex-1 rounded-lg border bg-white" style={{ borderColor: "#e5e5e5" }}>
+      <div ref={reactFlowWrapper} className="flex-1 rounded-lg border bg-white" style={{ borderColor: "#e5e5e5", height: "calc(100vh - 200px)", minHeight: "500px" }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -292,9 +294,11 @@ export default function FlowBuilder({
           onPaneClick={() => setSelectedNode(null)}
           nodeTypes={nodeTypes}
           fitView
-          deleteKeyCode="Backspace"
+          deleteKeyCode={["Backspace", "Delete"]}
           connectionLineStyle={{ stroke: "#6b7280" }}
+          defaultEdgeOptions={{ deletable: true }}
           style={{ background: "#fafafa" }}
+          edgesFocusable={true}
         >
           <Controls />
           <Background color="#e5e5e5" gap={20} />

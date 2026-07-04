@@ -1,5 +1,7 @@
 export type FlowStepType =
   | "send_text"
+  | "send_template"
+  | "send_interactive"
   | "ask_question"
   | "save_lead_field"
   | "qualify_lead"
@@ -18,6 +20,9 @@ export interface FlowStep {
   tipo: FlowStepType;
   texto?: string;
   campo?: string;
+  template_name?: string;
+  template_params?: string;
+  botones?: string[];
   siguiente?: string;
   si_contiene?: string[];
   calificacion?: "hot" | "warm" | "cold";

@@ -93,7 +93,7 @@ CREATE TABLE lg_flows (
     agencia_id      INT             NOT NULL REFERENCES lg_agencias(id),
     nombre          NVARCHAR(200)   NOT NULL,
     activo          BIT             NOT NULL DEFAULT 0,
-    [trigger]       NVARCHAR(MAX)   NOT NULL, -- JSON: keywords, regex, horarios
+    [trigger]       NVARCHAR(MAX)   NOT NULL, -- JSON: keywords, regex, schedules
     pasos           NVARCHAR(MAX)   NOT NULL, -- JSON: array de pasos con acciones
     version         INT             NOT NULL DEFAULT 1,
     creado          DATETIME2       NOT NULL DEFAULT GETDATE(),

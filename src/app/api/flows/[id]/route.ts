@@ -20,7 +20,7 @@ export async function PUT(
     `UPDATE lg_flows SET
       nombre = @nombre,
       activo = @activo,
-      trigger = @trigger,
+      [trigger] = @trigger,
       pasos = @pasos,
       version = version + 1,
       actualizado = GETDATE()

@@ -42,6 +42,53 @@ export function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
         </div>
       )}
 
+      {tipo === "send_template" && (
+        <div>
+          <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Nombre de la plantilla</label>
+          <input
+            type="text"
+            value={(d.template_name as string) ?? ""}
+            onChange={(e) => set("template_name", e.target.value)}
+            className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
+            placeholder="ej: bienvenida_whatsapp"
+          />
+          <label className="mt-2 mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Parametros (JSON, opcional)</label>
+          <textarea
+            value={(d.template_params as string) ?? "[]"}
+            onChange={(e) => set("template_params", e.target.value)}
+            className="w-full rounded-lg border px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
+            rows={3}
+            placeholder='[{"type":"text","text":"{{nombre}}"}]'
+          />
+        </div>
+      )}
+
+      {tipo === "send_interactive" && (
+        <div>
+          <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Texto del mensaje</label>
+          <textarea
+            value={(d.texto as string) ?? ""}
+            onChange={(e) => set("texto", e.target.value)}
+            className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
+            rows={2}
+            placeholder="Mensaje con botones..."
+          />
+          <label className="mt-2 mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Botones (uno por linea)</label>
+          <textarea
+            value={((d.botones as string[]) ?? []).join("\n")}
+            onChange={(e) => set("botones", e.target.value.split("\n").filter(Boolean))}
+            className="w-full rounded-lg border px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
+            rows={4}
+            placeholder={`Opcion 1\nOpcion 2\nOpcion 3`}
+          />
+          <p className="mt-1 text-xs" style={{ color: "#9ca3af" }}>Maximo 3 botones. Cada linea es una opcion.</p>
+        </div>
+      )}
+
       {tipo === "ask_question" && (
         <div>
           <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Pregunta</label>
@@ -71,7 +118,7 @@ export function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
           <input
             type="text"
             value={((d.condicion as Record<string, unknown>)?.campo as string) ?? ""}
-            onChange={(e) => set("condicion", { ...(d.condicion as Record<string, unknown> ?? {}), campo: e.target.value, operador: (d.condicion as Record<string, unknown>)?.operador ?? "contiene", paso_si: (d.condicion as Record<string, unknown>)?.paso_si ?? "", paso_no: (d.condicion as Record<string, unknown>)?.paso_no ?? "" })}
+            onChange={(e) => set("condicion", { campo: e.target.value, operador: (d.condicion as Record<string, unknown>)?.operador ?? "contiene", paso_si: (d.condicion as Record<string, unknown>)?.paso_si ?? "", paso_no: (d.condicion as Record<string, unknown>)?.paso_no ?? "" })}
             className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             style={{ borderColor: "#e5e5e5", color: "#464646" }}
             placeholder="ej: nombre, calificacion"
@@ -79,7 +126,7 @@ export function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
           <label className="mt-2 mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Operador</label>
           <select
             value={((d.condicion as Record<string, unknown>)?.operador as string) ?? "contiene"}
-            onChange={(e) => set("condicion", { ...(d.condicion as Record<string, unknown> ?? {}), campo: (d.condicion as Record<string, unknown>)?.campo ?? "", operador: e.target.value, paso_si: (d.condicion as Record<string, unknown>)?.paso_si ?? "", paso_no: (d.condicion as Record<string, unknown>)?.paso_no ?? "" })}
+            onChange={(e) => set("condicion", { campo: (d.condicion as Record<string, unknown>)?.campo ?? "", operador: e.target.value, paso_si: (d.condicion as Record<string, unknown>)?.paso_si ?? "", paso_no: (d.condicion as Record<string, unknown>)?.paso_no ?? "" })}
             className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             style={{ borderColor: "#e5e5e5", color: "#464646" }}
           >
@@ -93,7 +140,7 @@ export function NodeEditor({ node, onUpdate, onClose }: NodeEditorProps) {
               <input
                 type="text"
                 value={((d.condicion as Record<string, unknown>)?.valor as string) ?? ""}
-                onChange={(e) => set("condicion", { ...(d.condicion as Record<string, unknown> ?? {}), campo: (d.condicion as Record<string, unknown>)?.campo ?? "", operador: (d.condicion as Record<string, unknown>)?.operador ?? "contiene", valor: e.target.value, paso_si: (d.condicion as Record<string, unknown>)?.paso_si ?? "", paso_no: (d.condicion as Record<string, unknown>)?.paso_no ?? "" })}
+                onChange={(e) => set("condicion", { campo: (d.condicion as Record<string, unknown>)?.campo ?? "", operador: (d.condicion as Record<string, unknown>)?.operador ?? "contiene", valor: e.target.value, paso_si: (d.condicion as Record<string, unknown>)?.paso_si ?? "", paso_no: (d.condicion as Record<string, unknown>)?.paso_no ?? "" })}
                 className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 style={{ borderColor: "#e5e5e5", color: "#464646" }}
               />

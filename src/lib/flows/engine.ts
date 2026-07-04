@@ -1,4 +1,4 @@
-import { sendText } from "@/lib/whatsapp/send";
+import { sendText, sendTemplate, sendInteractive } from "@/lib/whatsapp/send";
 import { execute } from "@/lib/db";
 import type { Flow, FlowState } from "@/lib/flows/types";
 
@@ -18,6 +18,38 @@ export async function executeFlow(
   let finalizado = false;
 
   switch (pasoActual.tipo) {
+    case "send_template": {
+      await sendTemplate({
+        to: waId,
+        templateName: pasoActual.template_name ?? "default",
+        components: pasoActual.template_params ? JSON.parse(pasoActual.template_params) : undefined,
+      });
+      currentState.historial.push({ pasoId: pasoActual.id, accion: "send_template" });
+      if (pasoActual.siguiente) {
+        currentState.pasoActual = pasoActual.siguiente;
+      } else {
+        finalizado = true;
+      }
+      break;
+    }
+
+    case "send_interactive": {
+      const texto = interpolate(pasoActual.texto ?? "", currentState.variables);
+      await sendInteractive({
+        to: waId,
+        type: "button",
+        body: texto,
+        buttons: (pasoActual.botones ?? []).map((b) => ({ id: b.toLowerCase().replace(/\s+/g, "_"), title: b })),
+      });
+      currentState.historial.push({ pasoId: pasoActual.id, accion: "send_interactive" });
+      if (pasoActual.siguiente) {
+        currentState.pasoActual = pasoActual.siguiente;
+      } else {
+        finalizado = true;
+      }
+      break;
+    }
+
     case "send_text": {
       const texto = interpolate(pasoActual.texto ?? "", currentState.variables);
       await sendText({ to: waId, text: texto });

@@ -25,7 +25,11 @@ export const StepNode = memo(function StepNode({ data, selected }: NodeProps) {
           <p className="text-xs" style={{ color: "#9ca3af" }}>
             {d.tipo === "send_text" && d.texto
               ? `${(d.texto as string).slice(0, 40)}...`
-              : d.tipo === "ask_question"
+              : d.tipo === "send_template"
+                ? `📋 ${(d.template_name as string) ?? "sin plantilla"}`
+                : d.tipo === "send_interactive"
+                  ? `🔘 ${(d.botones as string[])?.length ?? 0} botones`
+                  : d.tipo === "ask_question"
                 ? `❓ ${(d.texto as string)?.slice(0, 30)}...`
                 : d.tipo === "conditional"
                   ? `🔀 ${(d.condicion as Record<string, string>)?.campo ?? "sin configurar"}`

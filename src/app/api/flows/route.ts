@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
 
   const result = await execute(
-    `INSERT INTO lg_flows (agencia_id, nombre, activo, trigger, pasos)
+    `INSERT INTO lg_flows (agencia_id, nombre, activo, [trigger], pasos)
      OUTPUT INSERTED.id
      VALUES (@agenciaId, @nombre, @activo, @trigger, @pasos)`,
     {
