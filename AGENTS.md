@@ -35,9 +35,9 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 | GET    | `/api/conversations`              | Listar conversaciones              |
 | GET    | `/api/conversations/[id]`         | Detalle + mensajes                 |
 | PATCH  | `/api/conversations/[id]`         | Actualizar estado/asignación       |
-| POST   | `/api/conversations/[id]/send`    | Enviar mensaje (template o texto)  |
+| POST   | `/api/conversations/[id]/send`    | Enviar mensaje (texto, imagen, video) |
 | GET    | `/api/ads`                        | Anuncios con métricas              |
-| GET    | `/api/media/[id]`                  | Proxy de multimedia WhatsApp        |
+| GET    | `/api/media/[id]`                  | Proxy de multimedia WhatsApp (imagen, video, audio, doc) |
 | GET    | `/api/agency`                     | Config de la agencia actual        |
 | POST   | `/api/flows`                      | Crear flow                         |
 | GET    | `/api/flows`                      | Listar flows                       |
@@ -52,6 +52,7 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 - Validación HMAC con `META_APP_SECRET` cuando está configurado
 - Idempotencia vía `message_id` + `conversacion_id`
 - Atribución mediante `ad_id` → `getAdAttribution()` → campaña/agencia
+- Captura `image_id`, `video_id`, `audio_id`, `document_id` para proxy multimedia
 
 ## Base de datos (SQL Server)
 
@@ -121,8 +122,11 @@ pm2 start ecosystem.config.js
 | `LDAP_URL`                   | URL del servidor LDAP                   |
 | `META_WEBHOOK_VERIFY_TOKEN`  | Token de verificación webhook WhatsApp  |
 | `META_APP_SECRET`            | App Secret para HMAC (opcional)         |
-| `META_ACCESS_TOKEN`          | Token de acceso Meta Graph API          |
-| `META_PHONE_NUMBER_ID`       | ID del número de teléfono de WhatsApp   |
+| `WHATSAPP_TOKEN`             | Token de acceso Meta Graph API (usado en código) |
+| `WHATSAPP_PHONE_ID`          | ID del número de teléfono de WhatsApp   |
+| `WHATSAPP_API_VERSION`       | Versión de la API (default: v25.0)      |
+| `META_ACCESS_TOKEN`          | Alias de WHATSAPP_TOKEN (documentación) |
+| `META_PHONE_NUMBER_ID`       | Alias de WHATSAPP_PHONE_ID (documentación) |
 | `META_BUSINESS_ACCOUNT_ID`   | ID del Business Account de Meta         |
 | `NEXT_BASE_PATH`            | basePath de Next.js (default: `/leads`)  |
 
@@ -143,7 +147,7 @@ npm run typecheck  # TypeScript estricto
 | Página     | Componente | Fuente datos | Refresh | Acciones |
 | ---------- | ---------- | ------------ | ------- | -------- |
 | `/app/inbox` | Client     | API `/api/conversations` | Polling 10s | Filtros, badge no leídos, preview mensaje |
-| `/app/inbox/[id]` | Client | API `/api/conversations/[id]` | Polling 5s | Enviar texto, scroll automático |
+| `/app/inbox/[id]` | Client | API `/api/conversations/[id]` | Polling 5s | Enviar texto, imagen/video, ver multimedia, scroll automático |
 | `/app/leads` | Client | API `/api/leads` | Polling 10s | Cambiar calificación inline |
 | `/app/flows` | Client | API `/api/flows` | Manual | Crear/editar/eliminar/toggle |
 | `/app/ads` | Client | API `/api/ads/performance` | Manual | Filtros |
@@ -158,6 +162,28 @@ npm run typecheck  # TypeScript estricto
 - Almacenar `ad_id`, `campaign_id`, `agencia_id` en cada mensaje entrante.
 - Auto-response flows en JSON por agencia (no hardcodeados).
 - Commits en español.
+
+## Brand / UI Colors
+
+Basado en `cooperativaguadalupana.com.gt`:
+
+| Color     | Hex       | Uso                          |
+| --------- | --------- | ---------------------------- |
+| Rojo      | `#cf2e2e` | Botones, badges, active nav  |
+| Azul osc. | `#003160` | Sidebar, headers, tabla      |
+| Azul      | `#0e5bb0` | Links, bot messages          |
+| Verde     | `#27a536` | Estado auto_respondiendo     |
+| Texto     | `#464646` | Texto principal              |
+| Gris      | `#6b7280` | Texto secundario             |
+| Fondo     | `#f5f5f5` | Background principal         |
+
+## Cliente API
+
+`src/lib/client-api.ts` — Helper que detecta el basePath (`/leads` o `/agencia`) desde `window.location.pathname` y construye las URLs correctas. Usar `apiGet()`, `apiPost()`, `apiPatch()`, `apiPut()`, `apiDelete()` en lugar de `fetch()` directo.
+
+## Config de Next.js
+
+- `next.config.ts`: `basePath` dinámico via `NEXT_BASE_PATH`, `serverExternalPackages: ["ldapjs"]` para evitar que el bundler rompa ldapjs.
 
 ## Setup notes
 
