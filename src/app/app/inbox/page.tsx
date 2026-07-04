@@ -1,7 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
-import { query } from "@/lib/db";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Conversacion {
   id: number;
@@ -16,78 +17,68 @@ interface Conversacion {
   msgs_no_leidos: number;
 }
 
-export default async function InboxPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ estado?: string; q?: string }>;
-}) {
-  const session = await getServerSession(authOptions);
-  const user = session?.user as unknown as { agencia_id: number } | undefined;
-  const agenciaId = user?.agencia_id ?? 0;
+export default function InboxPage() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const estado = sp.get("estado") ?? "auto_respondiendo";
+  const q = sp.get("q") ?? "";
 
-  const sp = await searchParams;
-  const estado = sp.estado ?? "auto_respondiendo";
-  const q = sp.q ?? "";
+  const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
 
-  let sql = `SELECT c.id, c.plataforma, c.contacto_externo_id, c.estado,
-                    c.ad_id, c.creado, c.actualizado,
-                    u.nombre AS asignado_nombre,
-                    (SELECT TOP 1 contenido FROM lg_mensajes WHERE conversacion_id = c.id ORDER BY recibido DESC) AS ultimo_mensaje,
-                    (SELECT COUNT(*) FROM lg_mensajes WHERE conversacion_id = c.id AND role IN ('cliente','bot')) AS msgs_no_leidos
-             FROM lg_conversaciones c
-             LEFT JOIN lg_usuarios u ON u.id = c.asignado_a
-             WHERE c.agencia_id = @agenciaId`;
-  const params: Record<string, unknown> = { agenciaId };
+  useEffect(() => {
+    async function fetchData() {
+      const params = new URLSearchParams();
+      if (estado !== "todas") params.set("estado", estado);
+      if (q) params.set("q", q);
+      const res = await fetch(`/api/conversations?${params}`);
+      if (res.ok) setConversaciones(await res.json());
+    }
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [estado, q]);
 
-  if (estado !== "todas") {
-    sql += ` AND c.estado = @estado`;
-    params.estado = estado;
+  function preview(c: Conversacion) {
+    try {
+      const parsed = JSON.parse(c.ultimo_mensaje ?? "{}");
+      return parsed.text ?? parsed.image_caption ?? parsed.interactive_reply?.title ?? "📷 Imagen";
+    } catch {
+      return "";
+    }
   }
-  if (q) {
-    sql += ` AND c.contacto_externo_id LIKE @q`;
-    params.q = `%${q}%`;
-  }
-
-  sql += ` ORDER BY c.actualizado DESC`;
-
-  const conversaciones = await query<Conversacion>(sql, params);
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Inbox</h1>
-        <form className="flex gap-2">
-          <select
-            name="estado"
-            defaultValue={estado}
-            className="rounded border px-3 py-1 text-sm"
-          >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            const p = new URLSearchParams();
+            const est = f.get("estado") as string;
+            const busq = f.get("q") as string;
+            if (est !== "auto_respondiendo") p.set("estado", est);
+            if (busq) p.set("q", busq);
+            router.push(`/app/inbox?${p}`);
+          }}
+          className="flex gap-2"
+        >
+          <select name="estado" defaultValue={estado} className="rounded border px-3 py-1 text-sm">
             <option value="auto_respondiendo">Auto-respuesta</option>
             <option value="en_espera">En espera</option>
             <option value="en_curso">En curso</option>
             <option value="cerrada">Cerradas</option>
             <option value="todas">Todas</option>
           </select>
-          <input
-            type="text"
-            name="q"
-            defaultValue={q}
-            placeholder="Buscar por numero..."
-            className="rounded border px-3 py-1 text-sm"
-          />
-          <button type="submit" className="rounded bg-blue-600 px-3 py-1 text-sm text-white">
-            Filtrar
-          </button>
+          <input type="text" name="q" defaultValue={q} placeholder="Buscar por numero..." className="rounded border px-3 py-1 text-sm" />
+          <button type="submit" className="rounded bg-blue-600 px-3 py-1 text-sm text-white">Filtrar</button>
         </form>
       </div>
 
       <div className="space-y-2">
         {conversaciones.map((c) => {
-          let preview = "";
-          try {
-            const parsed = JSON.parse(c.ultimo_mensaje ?? "{}");
-            preview = parsed.text ?? parsed.image_caption ?? parsed.interactive_reply?.title ?? "";
-          } catch {}
+          const pv = preview(c);
           return (
             <Link
               key={c.id}
@@ -103,9 +94,7 @@ export default async function InboxPage({
                     </span>
                   )}
                 </div>
-                <p className="truncate text-sm text-gray-500">
-                  {preview || "..."}
-                </p>
+                <p className="truncate text-sm text-gray-500">{pv || "..."}</p>
                 <p className="text-xs text-gray-400">
                   {c.plataforma}
                   {c.estado !== "auto_respondiendo" && ` · ${c.estado.replace("_", " ")}`}
@@ -121,11 +110,8 @@ export default async function InboxPage({
             </Link>
           );
         })}
-
         {conversaciones.length === 0 && (
-          <p className="py-8 text-center text-gray-400">
-            No hay conversaciones
-          </p>
+          <p className="py-8 text-center text-gray-400">No hay conversaciones</p>
         )}
       </div>
     </div>
