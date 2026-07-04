@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiGet } from "@/lib/client-api";
 
 interface Conversacion {
   id: number;
@@ -30,8 +31,8 @@ export default function InboxPage() {
       const params = new URLSearchParams();
       if (estado !== "todas") params.set("estado", estado);
       if (q) params.set("q", q);
-      const res = await fetch(`/api/conversations?${params}`);
-      if (res.ok) setConversaciones(await res.json());
+      const data = await apiGet<Conversacion[]>(`/conversations?${params}`);
+      setConversaciones(data);
     }
     fetchData();
     const interval = setInterval(fetchData, 10000);

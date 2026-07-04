@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { apiGet, apiPatch } from "@/lib/client-api";
 
 interface Lead {
   id: number;
@@ -30,10 +31,12 @@ export default function LeadsPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const params = new URLSearchParams();
-      if (filtro) params.set("calificacion", filtro);
-      const res = await fetch(`/api/leads?${params}`);
-      if (res.ok) setLeads(await res.json());
+      try {
+        const params = new URLSearchParams();
+        if (filtro) params.set("calificacion", filtro);
+        const data = await apiGet<Lead[]>(`/leads?${params}`);
+        setLeads(data);
+      } catch {}
     }
     fetchData();
     const interval = setInterval(fetchData, 10000);
@@ -41,14 +44,12 @@ export default function LeadsPage() {
   }, [filtro]);
 
   async function cambiarCalificacion(id: number, valor: string) {
-    await fetch(`/api/leads/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ calificacion: valor }),
-    });
-    setLeads((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, calificacion: valor } : l))
-    );
+    try {
+      await apiPatch(`/leads/${id}`, { calificacion: valor });
+      setLeads((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, calificacion: valor } : l))
+      );
+    } catch {}
   }
 
   return (

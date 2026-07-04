@@ -2,6 +2,8 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiGet, apiPost, apiPut } from "@/lib/client-api";
+import type { Flow } from "@/lib/flows/types";
 
 export default function FlowEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -16,10 +18,9 @@ export default function FlowEditorPage({ params }: { params: Promise<{ id: strin
 
   useEffect(() => {
     if (isNew) return;
-    fetch(`/api/flows?id=${id}`)
-      .then((r) => r.json())
+    apiGet<Flow[]>(`/flows`)
       .then((flows) => {
-        const flow = flows.find((f: { id: number }) => String(f.id) === id);
+        const flow = flows.find((f) => String(f.id) === id);
         if (flow) {
           setNombre(flow.nombre);
           setTriggerJson(JSON.stringify(flow.trigger, null, 2));
@@ -34,9 +35,11 @@ export default function FlowEditorPage({ params }: { params: Promise<{ id: strin
       const trigger = JSON.parse(triggerJson);
       const pasos = JSON.parse(pasosJson);
       setSaving(true);
-      const method = isNew ? "POST" : "PUT";
-      const url = isNew ? "/api/flows" : `/api/flows/${id}`;
-      await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nombre, trigger, pasos }) });
+      if (isNew) {
+        await apiPost("/flows", { nombre, trigger, pasos });
+      } else {
+        await apiPut(`/flows/${id}`, { nombre, trigger, pasos });
+      }
       router.push("/app/flows");
     } catch {
       setParseError("JSON invalido — revisa la sintaxis");

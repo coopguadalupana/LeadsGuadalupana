@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiGet } from "@/lib/client-api";
 
 interface AdMetric {
   ad_id: string;
@@ -15,7 +16,7 @@ export default function AdsDashboard() {
   const [data, setData] = useState<AdMetric[]>([]);
 
   useEffect(() => {
-    fetch("/api/ads/performance").then((r) => r.json()).then(setData);
+    apiGet<AdMetric[]>("/ads/performance").then(setData);
   }, []);
 
   const totals = data.reduce((s, a) => ({

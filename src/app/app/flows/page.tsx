@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Flow } from "@/lib/flows/types";
+import { apiGet, apiPut, apiDelete } from "@/lib/client-api";
 
 export default function FlowsListPage() {
   const router = useRouter();
@@ -10,8 +11,7 @@ export default function FlowsListPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/flows")
-      .then((r) => r.json())
+    apiGet<Flow[]>("/flows")
       .then(setFlows)
       .finally(() => setLoading(false));
   }, []);
@@ -19,16 +19,12 @@ export default function FlowsListPage() {
   async function toggleFlow(id: number, activo: boolean) {
     const flow = flows.find((f) => f.id === id);
     if (!flow) return;
-    await fetch(`/api/flows/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nombre: flow.nombre, activo, trigger: flow.trigger, pasos: flow.pasos }),
-    });
+    await apiPut(`/flows/${id}`, { nombre: flow.nombre, activo, trigger: flow.trigger, pasos: flow.pasos });
     setFlows(flows.map((f) => (f.id === id ? { ...f, activo } : f)));
   }
 
   async function deleteFlow(id: number) {
-    await fetch(`/api/flows/${id}`, { method: "DELETE" });
+    await apiDelete(`/flows/${id}`);
     setFlows(flows.filter((f) => f.id !== id));
   }
 

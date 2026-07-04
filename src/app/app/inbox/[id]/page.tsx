@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { apiGet, apiPost } from "@/lib/client-api";
 
 interface Mensaje {
   id: number;
@@ -34,10 +35,11 @@ export default function ChatPage({
   const prevLen = useRef(0);
 
   const fetchConv = useCallback(async () => {
-    const res = await fetch(`/api/conversations/${id}`);
-    if (res.ok) {
-      const data = await res.json();
+    try {
+      const data = await apiGet<Conversacion>(`/conversations/${id}`);
       setConv(data);
+      setLoading(false);
+    } catch {
       setLoading(false);
     }
   }, [id]);
@@ -59,11 +61,7 @@ export default function ChatPage({
     if (!texto.trim() || enviando) return;
     setEnviando(true);
     try {
-      await fetch(`/api/conversations/${id}/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto }),
-      });
+      await apiPost(`/conversations/${id}/send`, { texto });
       setTexto("");
       await fetchConv();
     } finally {

@@ -1,25 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiGet, apiPatch } from "@/lib/client-api";
 
 export default function ConfigPage() {
   const [config, setConfig] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/agency/config")
-      .then((r) => r.json())
+    apiGet<{ config: Record<string, unknown> }>("/agency/config")
       .then((data) => setConfig(JSON.stringify(data.config ?? {}, null, 2)));
   }, []);
 
   async function save() {
     setSaving(true);
     try {
-      await fetch("/api/agency/config", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: config,
-      });
+      await apiPatch("/agency/config", JSON.parse(config));
     } catch {
       alert("Error al guardar");
     }
