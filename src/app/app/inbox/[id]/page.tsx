@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState, useRef } from "react";
+import { use, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface Mensaje {
@@ -29,33 +29,46 @@ export default function ChatPage({
   const [conv, setConv] = useState<Conversacion | null>(null);
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(true);
+  const [enviando, setEnviando] = useState(false);
   const msgEnd = useRef<HTMLDivElement>(null);
+  const prevLen = useRef(0);
 
-  useEffect(() => {
-    fetch(`/api/conversations/${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setConv(data);
-        setLoading(false);
-      });
+  const fetchConv = useCallback(async () => {
+    const res = await fetch(`/api/conversations/${id}`);
+    if (res.ok) {
+      const data = await res.json();
+      setConv(data);
+      setLoading(false);
+    }
   }, [id]);
 
   useEffect(() => {
-    msgEnd.current?.scrollIntoView({ behavior: "smooth" });
+    fetchConv();
+    const interval = setInterval(fetchConv, 5000);
+    return () => clearInterval(interval);
+  }, [fetchConv]);
+
+  useEffect(() => {
+    if (conv && conv.mensajes.length > prevLen.current) {
+      msgEnd.current?.scrollIntoView({ behavior: "smooth" });
+      prevLen.current = conv.mensajes.length;
+    }
   }, [conv?.mensajes]);
 
   async function sendMessage() {
-    if (!texto.trim()) return;
-
-    await fetch(`/api/conversations/${id}/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texto }),
-    });
-
-    setTexto("");
-    const res = await fetch(`/api/conversations/${id}`);
-    setConv(await res.json());
+    if (!texto.trim() || enviando) return;
+    setEnviando(true);
+    try {
+      await fetch(`/api/conversations/${id}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto }),
+      });
+      setTexto("");
+      await fetchConv();
+    } finally {
+      setEnviando(false);
+    }
   }
 
   if (loading) return <p className="p-6">Cargando...</p>;
@@ -72,7 +85,7 @@ export default function ChatPage({
         </button>
         <h2 className="text-lg font-bold">{conv.contacto_externo_id}</h2>
         <p className="text-xs text-gray-500">
-          {conv.plataforma} · {conv.estado.replace("_", " ")}
+          {conv.plataforma} &middot; {conv.estado.replace("_", " ")}
         </p>
       </div>
 
@@ -97,7 +110,14 @@ export default function ChatPage({
                       : "bg-blue-600 text-white"
                 }`}
               >
-                <p>{contenido.text ?? contenido.body ?? "(media)"}</p>
+                {msg.tipo === "imagen" && contenido.image_caption ? (
+                  <>
+                    <p className="mb-1 text-xs opacity-60">📷 Imagen</p>
+                    <p>{contenido.image_caption}</p>
+                  </>
+                ) : (
+                  <p>{contenido.text ?? contenido.body ?? "(media)"}</p>
+                )}
                 <p className="mt-1 text-xs opacity-70">
                   {new Date(msg.recibido).toLocaleTimeString("es-GT")}
                 </p>
@@ -113,15 +133,17 @@ export default function ChatPage({
           type="text"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
           placeholder="Escribir mensaje..."
           className="flex-1 rounded-lg border px-4 py-2 text-sm"
+          disabled={enviando}
         />
         <button
           onClick={sendMessage}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white"
+          disabled={enviando || !texto.trim()}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
         >
-          Enviar
+          {enviando ? "Enviando..." : "Enviar"}
         </button>
       </div>
     </div>
