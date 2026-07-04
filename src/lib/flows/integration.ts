@@ -8,13 +8,20 @@ import {
 } from "@/lib/flows/engine";
 import type { Flow, FlowState } from "@/lib/flows/types";
 
+function parseFlow(raw: Record<string, unknown>): Flow {
+  return {
+    ...raw,
+    trigger: typeof raw.trigger === "string" ? JSON.parse(raw.trigger as string) : raw.trigger,
+    pasos: typeof raw.pasos === "string" ? JSON.parse(raw.pasos as string) : raw.pasos,
+  } as unknown as Flow;
+}
+
 export async function processMessage(
   conversacionId: number,
   agenciaId: number,
   waId: string,
   mensajeTexto: string
 ): Promise<void> {
-  // Cargar estado actual de la conversacion
   const convs = await query<{ estado: string; flow_state: string | null }>(
     `SELECT estado, flow_state FROM lg_conversaciones WHERE id = @id`,
     { id: conversacionId }
@@ -23,51 +30,45 @@ export async function processMessage(
   if (convs.length === 0) return;
   const conv = convs[0]!;
 
-  // Si la conversacion ya esta en_espera o en_curso, no procesar con flow
   if (conv.estado === "en_espera" || conv.estado === "en_curso") return;
 
   let currentState: FlowState | null = conv.flow_state
     ? JSON.parse(conv.flow_state)
     : null;
 
-  // Si estamos esperando respuesta, procesarla
   if (currentState && isWaitingForAnswer(currentState)) {
-    // Cargar el flow activo
-    const flows = await query<Flow>(
+    const raw = await query<Record<string, unknown>>(
       `SELECT * FROM lg_flows WHERE id = @flowId AND activo = 1`,
       { flowId: currentState.flowId }
     );
 
-    if (flows.length === 0) {
+    if (raw.length === 0) {
       currentState = null;
     } else {
-      currentState = handleAnswer(currentState, flows[0]!, mensajeTexto);
+      const flow = parseFlow(raw[0]!);
+      currentState = handleAnswer(currentState, flow, mensajeTexto);
       const { newState, finalizado } = await executeFlow(
-        flows[0]!,
+        flow,
         currentState,
         conversacionId,
         waId,
         mensajeTexto
       );
       currentState = newState;
-
-      if (finalizado) {
-        currentState = null;
-      }
-
+      if (finalizado) currentState = null;
       await saveState(conversacionId, currentState);
       return;
     }
   }
 
-  // Buscar flow activo de la agencia
-  const flows = await query<Flow>(
+  const raw = await query<Record<string, unknown>>(
     `SELECT * FROM lg_flows WHERE agencia_id = @agenciaId AND activo = 1
      ORDER BY version DESC`,
     { agenciaId }
   );
 
-  for (const flow of flows) {
+  for (const row of raw) {
+    const flow = parseFlow(row);
     if (matchTrigger(flow, mensajeTexto)) {
       currentState = createInitialState(flow);
       const { newState, finalizado } = await executeFlow(

@@ -27,7 +27,12 @@ export async function GET() {
       params.agenciaId = auth.user.agencia_id;
     }
 
-    const flows = await query(sql, params);
+    const rows = await query<Record<string, unknown>>(sql, params);
+    const flows = rows.map((r) => ({
+      ...r,
+      trigger: typeof r.trigger === "string" ? JSON.parse(r.trigger) : r.trigger,
+      pasos: typeof r.pasos === "string" ? JSON.parse(r.pasos) : r.pasos,
+    }));
     return NextResponse.json(flows);
   } catch (e) {
     console.error("GET flows error:", e);
