@@ -69,20 +69,21 @@ export default function ChatPage({
     }
   }
 
-  if (loading) return <p className="p-6">Cargando...</p>;
-  if (!conv) return <p className="p-6">Conversacion no encontrada</p>;
+  if (loading) return <p className="p-6" style={{ color: "#6b7280" }}>Cargando...</p>;
+  if (!conv) return <p className="p-6" style={{ color: "#6b7280" }}>Conversacion no encontrada</p>;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b pb-4">
+      <div className="border-b pb-4" style={{ borderColor: "#e5e5e5" }}>
         <button
           onClick={() => router.push("/app/inbox")}
-          className="mb-2 text-sm text-blue-600"
+          className="mb-2 text-sm font-medium transition-colors hover:opacity-80"
+          style={{ color: "#cf2e2e" }}
         >
           &larr; Volver
         </button>
-        <h2 className="text-lg font-bold">{conv.contacto_externo_id}</h2>
-        <p className="text-xs text-gray-500">
+        <h2 className="text-lg font-bold" style={{ color: "#003160" }}>{conv.contacto_externo_id}</h2>
+        <p className="text-xs" style={{ color: "#9ca3af" }}>
           {conv.plataforma} &middot; {conv.estado.replace("_", " ")}
         </p>
       </div>
@@ -100,13 +101,20 @@ export default function ChatPage({
               className={`flex ${msg.role === "cliente" ? "justify-start" : "justify-end"}`}
             >
               <div
-                className={`max-w-[70%] rounded-lg px-4 py-2 text-sm ${
+                className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   msg.role === "cliente"
-                    ? "bg-gray-100 text-gray-800"
+                    ? "text-gray-800"
                     : msg.role === "bot"
-                      ? "bg-blue-50 text-blue-800"
-                      : "bg-blue-600 text-white"
+                      ? "text-brand-blue-dark"
+                      : "text-white"
                 }`}
+                style={
+                  msg.role === "cliente"
+                    ? { background: "#f0f0f0" }
+                    : msg.role === "bot"
+                      ? { background: "#e8f0fe" }
+                      : { background: "#cf2e2e" }
+                }
               >
                 {msg.tipo === "imagen" && contenido.image_caption ? (
                   <>
@@ -114,9 +122,11 @@ export default function ChatPage({
                     <p>{contenido.image_caption}</p>
                   </>
                 ) : (
-                  <p>{contenido.text ?? contenido.body ?? "(media)"}</p>
+                  <p style={{ color: msg.role === "agente" ? "#ffffff" : "#464646" }}>
+                    {contenido.text ?? contenido.body ?? "(media)"}
+                  </p>
                 )}
-                <p className="mt-1 text-xs opacity-70">
+                <p className="mt-1 text-right text-xs opacity-60" style={{ color: msg.role === "agente" ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
                   {new Date(msg.recibido).toLocaleTimeString("es-GT")}
                 </p>
               </div>
@@ -126,20 +136,22 @@ export default function ChatPage({
         <div ref={msgEnd} />
       </div>
 
-      <div className="flex gap-2 border-t pt-4">
+      <div className="flex gap-2 border-t pt-4" style={{ borderColor: "#e5e5e5" }}>
         <input
           type="text"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
           placeholder="Escribir mensaje..."
-          className="flex-1 rounded-lg border px-4 py-2 text-sm"
+          className="flex-1 rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          style={{ borderColor: "#e5e5e5", color: "#464646" }}
           disabled={enviando}
         />
         <button
           onClick={sendMessage}
           disabled={enviando || !texto.trim()}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+          className="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+          style={{ background: "#cf2e2e" }}
         >
           {enviando ? "Enviando..." : "Enviar"}
         </button>

@@ -28,53 +28,58 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
+    <div className="flex min-h-screen items-center justify-center" style={{ background: "#003160" }}>
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg bg-white p-8 shadow-md"
+        className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl"
       >
-        <h1 className="mb-6 text-center text-2xl font-bold text-gray-800">
-          leadsGuadalupana
-        </h1>
-        <p className="mb-6 text-center text-sm text-gray-500">
-          Inicia sesion con tu cuenta corporativa
-        </p>
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold" style={{ color: "#003160" }}>
+            leadsGuadalupana
+          </h1>
+          <p className="mt-2 text-sm" style={{ color: "#6b7280" }}>
+            Inicia sesion con tu cuenta corporativa
+          </p>
+        </div>
 
         {error && (
-          <p className="mb-4 rounded bg-red-50 p-2 text-sm text-red-600">
+          <p className="mb-4 rounded-lg p-3 text-sm font-medium text-white" style={{ background: "#cf2e2e" }}>
             {error}
           </p>
         )}
 
         <div className="mb-4">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1.5 block text-sm font-medium" style={{ color: "#464646" }}>
             Usuario
           </label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
             required
           />
         </div>
 
         <div className="mb-6">
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1.5 block text-sm font-medium" style={{ color: "#464646" }}>
             Contrasena
           </label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border px-4 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
             required
           />
         </div>
 
         <button
           type="submit"
-          className="w-full rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+          className="w-full rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          style={{ background: "#cf2e2e" }}
         >
           Ingresar
         </button>
