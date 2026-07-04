@@ -33,11 +33,11 @@ export async function POST() {
     const entries: Array<{ dn: string; sAMAccountName: string; nombre: string; mail: string }> = [];
     await new Promise((resolve, reject) => {
       const results: Array<{ dn: string; sAMAccountName: string; nombre: string; mail: string }> = [];
-      client.search(baseDN, { scope: "sub", filter: "(&(objectClass=user)(sAMAccountName=*))" }, (err: Error | null, res: any) => {
-        if (err) return reject(err);
+      client.search(baseDN, { scope: "sub", filter: "(&(objectCategory=person)(objectClass=user))", sizeLimit: 1000, timeLimit: 30 }, (err: Error | null, res: any) => {
+        if (err && (err as any).lde_message !== "Size Limit Exceeded") return reject(err);
         res.on("searchEntry", (entry: any) => {
           const attrs = entry.attributes;
-          const get = (name: string) => attrs.find((a: any) => a.type.toLowerCase() === name.toLowerCase())?.values?.[0];
+          const get = (name: string) => attrs.find((a: any) => a.type?.toLowerCase() === name.toLowerCase())?.values?.[0];
           results.push({
             dn: entry.dn.toString(),
             sAMAccountName: get("sAMAccountName") ?? "",
@@ -46,9 +46,13 @@ export async function POST() {
           });
         });
         res.on("end", () => resolve(results));
-        res.on("error", (e: Error) => reject(e));
+        res.on("error", (e: any) => {
+          if (e.lde_message === "Size Limit Exceeded") resolve(results);
+          else reject(e);
+        });
       });
     }).then((r) => { entries.push(...(r as any[])); });
+    console.log(`LDAP sync: ${entries.length} usuarios encontrados`);
 
     let creados = 0; let actualizados = 0;
 
