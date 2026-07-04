@@ -54,6 +54,7 @@ export default function ChatPage({
   const [clienteDpi, setClienteDpi] = useState("");
   const [clienteTags, setClienteTags] = useState("");
   const [guardandoContacto, setGuardandoContacto] = useState(false);
+  const [busquedaMensaje, setBusquedaMensaje] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
@@ -309,6 +310,18 @@ export default function ChatPage({
         </div>
       )}
 
+      {/* Barra de busqueda de mensajes */}
+      <div className="border-b pb-2" style={{ borderColor: "#e5e5e5" }}>
+        <input
+          type="text"
+          value={busquedaMensaje}
+          onChange={(e) => setBusquedaMensaje(e.target.value)}
+          placeholder="Buscar en mensajes..."
+          className="w-full rounded-lg border px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-red-500"
+          style={{ borderColor: "#e5e5e5", color: "#464646" }}
+        />
+      </div>
+
       {/* Modal de detalles del contacto */}
       {mostrarDetalles && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -381,7 +394,14 @@ export default function ChatPage({
       )}
 
       <div className="flex-1 space-y-3 overflow-y-auto py-4">
-        {conv.mensajes.map((msg) => {
+        {conv.mensajes.filter((msg) => {
+          if (!busquedaMensaje) return true;
+          try {
+            const c = typeof msg.contenido === "string" ? JSON.parse(msg.contenido) : msg.contenido;
+            const texto = c.text ?? c.image_caption ?? c.body ?? "";
+            return texto.toLowerCase().includes(busquedaMensaje.toLowerCase());
+          } catch { return false; }
+        }).map((msg) => {
           const c =
             typeof msg.contenido === "string"
               ? JSON.parse(msg.contenido)
