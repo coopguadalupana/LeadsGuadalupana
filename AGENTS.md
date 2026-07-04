@@ -151,6 +151,7 @@ npm run typecheck  # TypeScript estricto
 | `/app/inbox/[id]` | Client | API `/api/conversations/[id]` | Polling 5s | Enviar texto, imagen/video, ver multimedia, scroll automático |
 | `/app/leads` | Client | API `/api/leads` | Polling 10s | Cambiar calificación inline |
 | `/app/flows` | Client | API `/api/flows` | Manual | Crear/editar/eliminar/toggle |
+| `/app/flows/[id]` | Client | API `/api/flows` | Manual | Editor visual drag & drop (React Flow) |
 | `/app/ads` | Client | API `/api/ads/performance` | Manual | Filtros |
 | `/app/config` | Client | API `/api/agency/config` | Manual | Guardar JSON (solo admin) |
 
