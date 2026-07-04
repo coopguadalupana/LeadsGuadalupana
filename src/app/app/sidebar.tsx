@@ -19,6 +19,7 @@ export default function Sidebar({
     { href: "/app/leads", label: "Leads", icon: "👤", show: true },
     { href: "/app/flows", label: "Flujos", icon: "⚙️", show: canManageFlows(rol) },
     { href: "/app/ads", label: "Anuncios", icon: "📊", show: true },
+    { href: "/app/usuarios", label: "Usuarios", icon: "👥", show: canManageUsers(rol) },
     { href: "/app/config", label: "Config", icon: "🔧", show: canManageUsers(rol) },
   ];
 
