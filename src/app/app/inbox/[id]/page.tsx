@@ -2,7 +2,8 @@
 
 import { use, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { apiGet, apiPost } from "@/lib/client-api";
+import { useSession } from "next-auth/react";
+import { apiGet, apiPost, apiPatch } from "@/lib/client-api";
 
 interface Mensaje {
   id: number;
@@ -27,11 +28,16 @@ export default function ChatPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { data: session } = useSession();
+  const authUserId = Number(session?.user?.id ?? 0);
   const [conv, setConv] = useState<Conversacion | null>(null);
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [subiendoImg, setSubiendoImg] = useState(false);
+  const [agentes, setAgentes] = useState<Array<{ id: number; nombre: string }>>([]);
+  const [mostrarTransferir, setMostrarTransferir] = useState(false);
+  const [transfiriendo, setTransfiriendo] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
@@ -58,6 +64,20 @@ export default function ChatPage({
     }, 1000);
     return () => clearTimeout(timeout);
   }, [id]);
+
+  useEffect(() => {
+    apiGet<Array<{ id: number; nombre: string }>>("/agency/agents").then(setAgentes).catch(() => {});
+  }, []);
+
+  async function transferir(agenteId: number) {
+    setTransfiriendo(true);
+    try {
+      await apiPatch(`/conversations/${id}/assign`, { agente_id: agenteId });
+      setMostrarTransferir(false);
+    } finally {
+      setTransfiriendo(false);
+    }
+  }
 
   useEffect(() => {
     if (conv && conv.mensajes.length > prevLen.current) {
@@ -104,17 +124,49 @@ export default function ChatPage({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b pb-4" style={{ borderColor: "#e5e5e5" }}>
-        <button
-          onClick={() => router.push("/app/inbox")}
-          className="mb-2 text-sm font-medium transition-colors hover:opacity-80"
-          style={{ color: "#cf2e2e" }}
-        >
-          &larr; Volver
-        </button>
-        <h2 className="text-lg font-bold" style={{ color: "#003160" }}>{conv.contacto_externo_id}</h2>
-        <p className="text-xs" style={{ color: "#9ca3af" }}>
-          {conv.plataforma} &middot; {conv.estado.replace("_", " ")}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <button
+              onClick={() => router.push("/app/inbox")}
+              className="mb-2 text-sm font-medium transition-colors hover:opacity-80"
+              style={{ color: "#cf2e2e" }}
+            >
+              &larr; Volver
+            </button>
+            <h2 className="text-lg font-bold" style={{ color: "#003160" }}>{conv.contacto_externo_id}</h2>
+            <p className="text-xs" style={{ color: "#9ca3af" }}>
+              {conv.plataforma} &middot; {conv.estado.replace("_", " ")}
+            </p>
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => setMostrarTransferir(!mostrarTransferir)}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+              style={{ background: "#f0f0f0", color: "#464646" }}
+            >
+              Transferir
+            </button>
+            {mostrarTransferir && (
+              <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border bg-white py-1 shadow-lg" style={{ borderColor: "#e5e5e5" }}>
+                <p className="px-3 py-1.5 text-xs font-medium" style={{ color: "#9ca3af" }}>Transferir a:</p>
+                {agentes.filter(a => a.id !== Number(authUserId)).map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => transferir(a.id)}
+                    disabled={transfiriendo}
+                    className="block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-gray-50"
+                    style={{ color: "#464646" }}
+                  >
+                    {a.nombre}
+                  </button>
+                ))}
+                {agentes.length <= 1 && (
+                  <p className="px-3 py-1.5 text-xs" style={{ color: "#9ca3af" }}>No hay otros agentes</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto py-4">
