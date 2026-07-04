@@ -62,7 +62,7 @@ CREATE TABLE lg_mensajes (
     tipo            NVARCHAR(20)    NOT NULL CHECK (tipo IN ('texto','imagen','audio','video','documento','template','interactivo','ubicacion','contacto','sticker','desconocido')),
     contenido       NVARCHAR(MAX)   NOT NULL, -- JSON: texto, URLs, caption, etc.
     metadata        NVARCHAR(MAX)   NULL, -- JSON: ad_id, campaign_id, platform_data
-    recibido        DATETIME2       NOT NULL DEFAULT GETDATE(),
+    recibido        DATETIME2       NOT NULL DEFAULT SYSUTCDATETIME(),
     procesado       BIT             NOT NULL DEFAULT 0,
     CONSTRAINT UQ_lg_mensajes_message_id UNIQUE (conversacion_id, message_id)
 );
