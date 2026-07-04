@@ -79,13 +79,19 @@ export async function POST(
     return NextResponse.json({ error: "Texto requerido" }, { status: 400 });
   }
 
-  await sendText({ to: conv.contacto_externo_id, text: texto });
-
+  // Save locally FIRST, then send to WhatsApp
   await execute(
     `INSERT INTO lg_mensajes (conversacion_id, role, tipo, contenido)
      VALUES (@convId, 'agente', 'texto', @contenido)`,
     { convId: conv.id, contenido: JSON.stringify({ text: texto }) }
   );
+
+  try {
+    await sendText({ to: conv.contacto_externo_id, text: texto });
+  } catch (e) {
+    console.error("Error enviando mensaje a WhatsApp:", e);
+    // El mensaje ya esta guardado localmente
+  }
 
   if (conv.estado === "en_espera") {
     await execute(
