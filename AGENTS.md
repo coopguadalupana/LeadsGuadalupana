@@ -154,6 +154,18 @@ npm run typecheck  # TypeScript estricto
 | `/app/ads` | Client | API `/api/ads/performance` | Manual | Filtros |
 | `/app/config` | Client | API `/api/agency/config` | Manual | Guardar JSON (solo admin) |
 
+## Roles y permisos
+
+| Rol | Acceso |
+|-----|--------|
+| `agent` | Solo ver conversaciones/leads de su agencia, enviar mensajes |
+| `supervisor` | Ver todas las agencias, transferir conversaciones, cambiar agencia |
+| `flow_admin` | Lo mismo que agent + crear/editar/eliminar flujos |
+| `admin` | Asignar roles a usuarios, gestionar config |
+| `superadmin` | Acceso total a todo |
+
+Validación via `src/lib/auth/permissions.ts` — funciones `canViewAllConversations()`, `canManageFlows()`, `canAssignRoles()`, etc.
+
 ## Conventions
 
 - TypeScript strict mode.
