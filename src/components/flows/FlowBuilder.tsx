@@ -104,21 +104,14 @@ function edgesToPasos(nodes: Node[], edges: Edge[]): FlowStep[] {
       calificacion: d.calificacion as "hot" | "warm" | "cold" | undefined,
       condicion: d.condicion as FlowStep["condicion"],
     };
-    // Find the simple next edge
-    const nextEdge = edges.find(
-      (e) => e.source === node.id && !e.sourceHandle?.includes("-no")
-    );
-    if (nextEdge && nextEdge.sourceHandle !== "no") {
-      paso.siguiente = nextEdge.target;
-    }
-    // Find conditional edges
+    // For conditional steps: read from Si/No edges and node data
     const siEdge = edges.find(
       (e) => e.source === node.id && e.sourceHandle === "si"
     );
     const noEdge = edges.find(
       (e) => e.source === node.id && e.sourceHandle === "no"
     );
-    if (paso.condicion || siEdge || noEdge) {
+    if (d.tipo === "conditional") {
       const c = d.condicion as FlowStep["condicion"];
       paso.condicion = {
         campo: c?.campo ?? "",
@@ -127,6 +120,12 @@ function edgesToPasos(nodes: Node[], edges: Edge[]): FlowStep[] {
         paso_si: siEdge?.target ?? c?.paso_si ?? "",
         paso_no: noEdge?.target ?? c?.paso_no ?? "",
       };
+    } else {
+      // Non-conditional: find the default outgoing edge (no sourceHandle)
+      const nextEdge = edges.find(
+        (e) => e.source === node.id && !e.sourceHandle
+      );
+      if (nextEdge) paso.siguiente = nextEdge.target;
     }
     pasos.push(paso);
   }
