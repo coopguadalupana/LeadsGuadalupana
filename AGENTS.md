@@ -123,6 +123,7 @@ pm2 start ecosystem.config.js
 | `META_ACCESS_TOKEN`          | Token de acceso Meta Graph API          |
 | `META_PHONE_NUMBER_ID`       | ID del número de teléfono de WhatsApp   |
 | `META_BUSINESS_ACCOUNT_ID`   | ID del Business Account de Meta         |
+| `NEXT_BASE_PATH`            | basePath de Next.js (default: `/leads`)  |
 
 ## Developer commands
 
