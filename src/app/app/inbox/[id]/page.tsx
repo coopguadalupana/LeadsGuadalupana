@@ -42,6 +42,7 @@ export default function ChatPage({
   const [mostrarCerrar, setMostrarCerrar] = useState(false);
   const [motivoCierre, setMotivoCierre] = useState("");
   const [cerrando, setCerrando] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
@@ -105,11 +106,14 @@ export default function ChatPage({
 
   async function sendMessage() {
     if (!texto.trim() || enviando) return;
+    setErrorMsg("");
     setEnviando(true);
     try {
       await apiPost(`/conversations/${id}/send`, { texto });
       setTexto("");
       await fetchConv();
+    } catch (e) {
+      setErrorMsg("Error al enviar: " + (e instanceof Error ? e.message : "desconocido"));
     } finally {
       setEnviando(false);
     }
@@ -313,6 +317,11 @@ export default function ChatPage({
         <div ref={msgEnd} />
       </div>
 
+      {errorMsg && (
+        <div className="rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ background: "#cf2e2e" }}>
+          {errorMsg}
+        </div>
+      )}
       <div className="flex flex-col gap-2 border-t pt-4" style={{ borderColor: "#e5e5e5" }}>
         <div className="flex gap-2">
           <input
