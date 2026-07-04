@@ -1,25 +1,27 @@
-// SQL Server almacena GETDATE() que devuelve hora local (Guatemala UTC-6).
-// mssql lo interpreta como UTC. Corregimos sumando 6h al crear el Date.
-const GT_OFFSET = 6 * 60 * 60 * 1000;
+// Todos los mensajes se almacenan en UTC en la BD.
+// El navegador convierte automaticamente a la zona horaria del usuario.
+// Usamos America/Guatemala para consistencia.
 
-export function gtDate(dateStr: string): Date {
-  return new Date(new Date(dateStr).getTime() + GT_OFFSET);
-}
+const TIME_OPTS: Intl.DateTimeFormatOptions = {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "America/Guatemala",
+};
+
+const DATE_OPTS: Intl.DateTimeFormatOptions = {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "America/Guatemala",
+};
 
 export function formatGtTime(dateStr: string): string {
-  return gtDate(dateStr).toLocaleTimeString("es-GT", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  return new Date(dateStr).toLocaleTimeString("es-GT", TIME_OPTS);
 }
 
 export function formatGtDate(dateStr: string): string {
-  return gtDate(dateStr).toLocaleDateString("es-GT", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
+  return new Date(dateStr).toLocaleDateString("es-GT", DATE_OPTS);
 }
