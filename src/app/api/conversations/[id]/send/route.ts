@@ -80,10 +80,11 @@ export async function POST(
   }
 
   // Save locally FIRST, then send to WhatsApp
+  const msgId = `agent_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   await execute(
-    `INSERT INTO lg_mensajes (conversacion_id, role, tipo, contenido)
-     VALUES (@convId, 'agente', 'texto', @contenido)`,
-    { convId: conv.id, contenido: JSON.stringify({ text: texto }) }
+    `INSERT INTO lg_mensajes (conversacion_id, message_id, role, tipo, contenido)
+     VALUES (@convId, @msgId, 'agente', 'texto', @contenido)`,
+    { convId: conv.id, msgId, contenido: JSON.stringify({ text: texto }) }
   );
 
   try {
