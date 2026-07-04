@@ -163,6 +163,7 @@ npm run typecheck  # TypeScript estricto
 - Almacenar `ad_id`, `campaign_id`, `agencia_id` en cada mensaje entrante.
 - Auto-response flows en JSON por agencia (no hardcodeados).
 - Commits en español.
+- **Solicitar confirmación** antes de ejecutar UPDATE o DELETE en base de datos. Mostrar el query SQL exacto y esperar aprobación.
 
 ## Brand / UI Colors
 
