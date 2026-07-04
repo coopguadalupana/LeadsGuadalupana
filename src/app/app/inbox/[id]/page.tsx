@@ -53,6 +53,13 @@ export default function ChatPage({
   }, [fetchConv]);
 
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      apiPost(`/conversations/${id}/read`, {}).catch(() => {});
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [id]);
+
+  useEffect(() => {
     if (conv && conv.mensajes.length > prevLen.current) {
       msgEnd.current?.scrollIntoView({ behavior: "smooth" });
       prevLen.current = conv.mensajes.length;

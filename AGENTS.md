@@ -36,6 +36,7 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 | GET    | `/api/conversations/[id]`         | Detalle + mensajes                 |
 | PATCH  | `/api/conversations/[id]`         | Actualizar estado/asignación       |
 | POST   | `/api/conversations/[id]/send`    | Enviar mensaje (texto, imagen, video) |
+| POST   | `/api/conversations/[id]/read`   | Marcar conversación como leída + read receipt WhatsApp |
 | GET    | `/api/ads`                        | Anuncios con métricas              |
 | GET    | `/api/media/[id]`                  | Proxy de multimedia WhatsApp (imagen, video, audio, doc) |
 | GET    | `/api/agency`                     | Config de la agencia actual        |

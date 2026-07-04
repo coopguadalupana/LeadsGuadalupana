@@ -13,11 +13,15 @@ export async function GET(req: NextRequest) {
 
   let sql = `SELECT c.id, c.plataforma, c.contacto_externo_id, c.estado,
                     c.ad_id, c.campaign_id, c.creado, c.actualizado,
+                    c.ultima_lectura, c.leido_por,
                     u.nombre AS asignado_nombre,
+                    r.nombre AS leido_por_nombre,
                     (SELECT TOP 1 contenido FROM lg_mensajes WHERE conversacion_id = c.id ORDER BY recibido DESC) AS ultimo_mensaje,
-                    (SELECT COUNT(*) FROM lg_mensajes WHERE conversacion_id = c.id AND role = 'cliente') AS msgs_no_leidos
+                    (SELECT COUNT(*) FROM lg_mensajes WHERE conversacion_id = c.id AND role IN ('cliente','bot')
+                     AND (c.ultima_lectura IS NULL OR recibido > c.ultima_lectura)) AS msgs_no_leidos
              FROM lg_conversaciones c
              LEFT JOIN lg_usuarios u ON u.id = c.asignado_a
+             LEFT JOIN lg_usuarios r ON r.id = c.leido_por
              WHERE c.agencia_id = @agenciaId`;
   const params: Record<string, unknown> = { agenciaId: auth.user.agencia_id };
 

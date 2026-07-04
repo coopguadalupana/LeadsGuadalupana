@@ -42,6 +42,8 @@ CREATE TABLE lg_conversaciones (
                         CHECK (estado IN ('auto_respondiendo','en_espera','en_curso','cerrada')),
     flow_state          NVARCHAR(MAX)   NULL, -- JSON: estado actual del flow de auto-respuesta
     asignado_a          INT             NULL REFERENCES lg_usuarios(id),
+    leido_por           INT             NULL REFERENCES lg_usuarios(id),
+    ultima_lectura      DATETIME2       NULL,
     creado              DATETIME2       NOT NULL DEFAULT GETDATE(),
     actualizado         DATETIME2       NOT NULL DEFAULT GETDATE()
 );
