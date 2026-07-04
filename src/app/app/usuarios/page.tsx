@@ -28,6 +28,8 @@ export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [sincronizando, setSincronizando] = useState(false);
   const [syncResult, setSyncResult] = useState("");
+  const [filtroNombre, setFiltroNombre] = useState("");
+  const [filtroAgencia, setFiltroAgencia] = useState("");
 
   useEffect(() => {
     apiGet<Usuario[]>("/agency/users").then(setUsuarios).catch(() => {});
@@ -84,6 +86,33 @@ export default function UsuariosPage() {
         </div>
       )}
 
+      <div className="mb-4 flex gap-2">
+        <input
+          type="text"
+          value={filtroNombre}
+          onChange={(e) => setFiltroNombre(e.target.value)}
+          placeholder="Buscar por nombre o usuario..."
+          className="flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          style={{ borderColor: "#e5e5e5", color: "#464646" }}
+        />
+        {usuarios.some(u => u.agencia_nombre) && (
+          <select
+            value={filtroAgencia}
+            onChange={(e) => setFiltroAgencia(e.target.value)}
+            className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
+          >
+            <option value="">Todas las agencias</option>
+            {Array.from(new Set(usuarios.map(u => u.agencia_nombre).filter(Boolean))).sort().map(ag => (
+              <option key={ag} value={ag}>{ag}</option>
+            ))}
+          </select>
+        )}
+        <span className="flex items-center text-xs" style={{ color: "#9ca3af" }}>
+          {usuarios.filter(u => (!filtroNombre || u.nombre.toLowerCase().includes(filtroNombre.toLowerCase()) || u.ldap_sam.toLowerCase().includes(filtroNombre.toLowerCase())) && (!filtroAgencia || u.agencia_nombre === filtroAgencia)).length} usuarios
+        </span>
+      </div>
+
       <div className="overflow-x-auto rounded-xl border bg-white" style={{ borderColor: "#e5e5e5" }}>
         <table className="w-full text-sm">
           <thead>
@@ -97,7 +126,10 @@ export default function UsuariosPage() {
             </tr>
           </thead>
           <tbody>
-            {usuarios.map((u) => (
+            {usuarios.filter(u => 
+              (!filtroNombre || u.nombre.toLowerCase().includes(filtroNombre.toLowerCase()) || u.ldap_sam.toLowerCase().includes(filtroNombre.toLowerCase())) &&
+              (!filtroAgencia || u.agencia_nombre === filtroAgencia)
+            ).map((u) => (
               <tr key={u.id} className="border-b transition-colors hover:bg-gray-50" style={{ borderColor: "#f0f0f0", opacity: u.activo ? 1 : 0.5 }}>
                 <td className="px-4 py-3 font-medium" style={{ color: "#464646" }}>{u.nombre}</td>
                 <td className="px-4 py-3" style={{ color: "#6b7280" }}>{u.ldap_sam}</td>
