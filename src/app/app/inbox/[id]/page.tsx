@@ -146,11 +146,21 @@ export default function ChatPage({
 
   async function sendMessage() {
     if (!texto.trim() || enviando) return;
+    const msgTexto = texto;
     setErrorMsg("");
     setEnviando(true);
+    setTexto("");
+    // Optimistic update: show message immediately
+    setConv((prev) => {
+      if (!prev) return prev;
+      const now = new Date().toISOString();
+      return {
+        ...prev,
+        mensajes: [...prev.mensajes, { id: -Date.now(), role: "agente", tipo: "texto", contenido: JSON.stringify({ text: msgTexto }), recibido: now } as Mensaje],
+      };
+    });
     try {
-      await apiPost(`/conversations/${id}/send`, { texto });
-      setTexto("");
+      await apiPost(`/conversations/${id}/send`, { texto: msgTexto });
       await fetchConv();
     } catch (e) {
       setErrorMsg("Error al enviar: " + (e instanceof Error ? e.message : "desconocido"));
