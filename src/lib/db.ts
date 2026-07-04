@@ -5,6 +5,7 @@ interface DbConfig {
   user: string;
   password: string;
   database: string;
+  port: number;
   options?: sql.config["options"];
 }
 
@@ -15,6 +16,7 @@ function getConfig(): DbConfig {
   const user = process.env.SQL_USER;
   const password = process.env.SQL_PASSWORD;
   const database = process.env.SQL_DB;
+  const port = process.env.PORTSQL ? Number(process.env.PORTSQL) : 1433;
 
   if (!server || !user || !password || !database) {
     throw new Error(
@@ -22,7 +24,7 @@ function getConfig(): DbConfig {
     );
   }
 
-  return { server, user, password, database };
+  return { server, user, password, database, port };
 }
 
 export async function getPool(): Promise<sql.ConnectionPool> {
@@ -32,6 +34,7 @@ export async function getPool(): Promise<sql.ConnectionPool> {
 
   pool = new sql.ConnectionPool({
     server: cfg.server,
+    port: cfg.port,
     user: cfg.user,
     password: cfg.password,
     database: cfg.database,

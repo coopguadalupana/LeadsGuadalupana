@@ -3,6 +3,7 @@ import ldapjs from "ldapjs";
 interface LdapUser {
   dn: string;
   sAMAccountName: string;
+  userPrincipalName?: string;
   name: string;
   mail?: string;
   subou_agencia: string;
@@ -85,6 +86,7 @@ export async function authenticateLDAP(
     return {
       dn: userDN,
       sAMAccountName: getAttr("sAMAccountName") ?? username,
+      userPrincipalName: getAttr("userPrincipalName"),
       name: getAttr("displayName") ?? getAttr("cn") ?? username,
       mail: getAttr("mail"),
       subou_agencia: subou ?? "",

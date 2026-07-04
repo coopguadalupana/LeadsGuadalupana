@@ -12,14 +12,23 @@ export async function GET(req: NextRequest) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
+  console.log("Webhook GET - mode:", mode, "token:", token, "challenge:", challenge);
+  console.log("Webhook GET - expected token:", process.env.META_WEBHOOK_VERIFY_TOKEN);
+
   const result = verifyWebhook(mode, token, challenge);
   if (result !== null) {
-    return new Response(result, {
+    console.log("Webhook verification successful, returning challenge:", result);
+    const cleanChallenge = String(result).trim();
+    return new Response(cleanChallenge, {
       status: 200,
-      headers: { "Content-Type": "text/plain" },
+      headers: { "Content-Type": "text/plain",
+        // Opcional: Evita que Next.js o Nginx guarden en caché esta respuesta de verificación
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+       },
     });
   }
 
+  console.error("Webhook verification failed");
   return new Response("Verification failed", { status: 403 });
 }
 
@@ -27,7 +36,7 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const body = JSON.parse(rawBody);
-
+    console.log("Webhook POST - raw body:", rawBody);
     // Los webhooks de entrada no siempre se verifican con HMAC en los primeros
     // mensajes de prueba. Se valida cuando META_APP_SECRET esta configurado.
     const appSecret = process.env.META_APP_SECRET;
@@ -133,13 +142,30 @@ export async function POST(req: NextRequest) {
         type: msg.type,
       });
 
+      const tipoMap: Record<string, string> = {
+        text: "texto",
+        image: "imagen",
+        audio: "audio",
+        video: "video",
+        document: "documento",
+        interactive: "interactivo",
+        location: "ubicacion",
+        contacts: "contacto",
+        sticker: "sticker",
+        button: "interactivo",
+        list: "interactivo",
+        order: "desconocido",
+        system: "desconocido",
+      };
+      const tipo = tipoMap[msg.type] ?? "desconocido";
+
       await execute(
         `INSERT INTO lg_mensajes (conversacion_id, message_id, role, tipo, contenido, metadata)
          VALUES (@convId, @msgId, 'cliente', @tipo, @contenido, @metadata)`,
         {
           convId,
           msgId: msg.message_id,
-          tipo: msg.type === "interactive" ? "interactivo" : msg.type,
+          tipo,
           contenido,
           metadata,
         }

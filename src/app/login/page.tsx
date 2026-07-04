@@ -2,8 +2,10 @@
 
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,7 +23,7 @@ export default function LoginPage() {
     if (result?.error) {
       setError("Credenciales invalidas");
     } else {
-      window.location.href = "/app/inbox";
+      router.push("/app/inbox");
     }
   }
 

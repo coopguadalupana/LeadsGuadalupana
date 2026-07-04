@@ -30,8 +30,8 @@ export const authOptions: NextAuthOptions = {
           `SELECT u.id, u.agencia_id, u.rol, u.nombre
            FROM lg_usuarios u
            JOIN lg_agencias a ON a.id = u.agencia_id
-           WHERE u.ldap_sam = @sam AND a.subou_ldap = @subou AND a.activa = 1`,
-          { sam: ldapUser.sAMAccountName, subou: ldapUser.subou_agencia }
+           WHERE (u.ldap_sam = @sam OR u.ldap_sam = @upn) AND a.activa = 1`,
+          { sam: ldapUser.sAMAccountName, upn: ldapUser.userPrincipalName ?? "" }
         );
 
         if (usuarios.length === 0) return null;
