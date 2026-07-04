@@ -24,7 +24,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Sin campos para actualizar" }, { status: 400 });
   }
 
-  updates.push("actualizado = SYSUTCDATETIME()");
+  updates.push("actualizado = GETDATE()");
 
   await execute(
     `UPDATE lg_leads SET ${updates.join(", ")}

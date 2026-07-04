@@ -156,14 +156,17 @@ export default function ChatPage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto: msgTexto }),
       });
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mensajes) setConv(data as Conversacion);
+      } else {
         const err = await res.json().catch(() => ({ error: `Error ${res.status}` }));
         setErrorMsg(err.error || `Error ${res.status}`);
-      } else {
         await fetchConv();
       }
     } catch (e) {
       setErrorMsg("Error de red al enviar");
+      await fetchConv();
     } finally {
       setEnviando(false);
     }
@@ -481,7 +484,7 @@ export default function ChatPage({
                   </p>
                 )}
                 <p className="mt-1 text-right text-xs opacity-60" style={{ color: msg.role === "agente" ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
-                  {new Date(msg.recibido).toLocaleTimeString("es-GT", { timeZone: "America/Guatemala" })}
+                  {new Date(msg.recibido).toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit", hour12: false })}
                 </p>
               </div>
             </div>

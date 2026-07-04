@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         convId = existing[0]!.id;
         if (existing[0]!.estado === "en_curso" || existing[0]!.estado === "cerrada") {
           await execute(
-            `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = SYSUTCDATETIME(), motivo_cierre = NULL
+            `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = GETDATE(), motivo_cierre = NULL
              WHERE id = @id`,
             { id: convId }
           );

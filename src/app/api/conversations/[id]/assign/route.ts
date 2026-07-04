@@ -13,7 +13,7 @@ export async function PATCH(
   const { agente_id } = await req.json();
 
   await execute(
-    `UPDATE lg_conversaciones SET asignado_a = @agenteId, actualizado = SYSUTCDATETIME()
+    `UPDATE lg_conversaciones SET asignado_a = @agenteId, actualizado = GETDATE()
      WHERE id = @id AND agencia_id = @agenciaId`,
     { id: Number(id), agenciaId: auth.user.agencia_id, agenteId: agente_id ?? auth.user.id }
   );

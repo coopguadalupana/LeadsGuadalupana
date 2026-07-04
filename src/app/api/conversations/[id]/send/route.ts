@@ -64,7 +64,7 @@ export async function POST(
 
     if (conv.estado === "en_espera") {
       await execute(
-        `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = SYSUTCDATETIME()
+        `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETDATE()
          WHERE id = @id`,
         { id: conv.id }
       );
@@ -96,11 +96,26 @@ export async function POST(
 
   if (conv.estado === "en_espera") {
     await execute(
-      `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = SYSUTCDATETIME()
+      `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETDATE()
        WHERE id = @id`,
       { id: conv.id }
     );
   }
 
-  return NextResponse.json({ success: true });
+  // Return the updated conversation with messages
+  const updatedConv = await query<Record<string, unknown>>(
+    `SELECT id, agencia_id, plataforma, contacto_externo_id, estado,
+            ad_id, campaign_id, creado, actualizado
+     FROM lg_conversaciones WHERE id = @id`,
+    { id: conv.id }
+  );
+
+  const mensajes = await query(
+    `SELECT id, role, tipo, contenido, metadata, recibido
+     FROM lg_mensajes WHERE conversacion_id = @convId
+     ORDER BY recibido ASC`,
+    { convId: conv.id }
+  );
+
+  return NextResponse.json({ ...updatedConv[0], mensajes });
 }

@@ -134,9 +134,8 @@ export default function InboxPage() {
               </div>
               <div className="ml-4 shrink-0 text-right text-xs" style={{ color: "#9ca3af" }}>
                 {new Date(c.actualizado).toLocaleDateString("es-GT", {
-                  day: "2-digit", month: "2-digit",
-                  hour: "2-digit", minute: "2-digit",
-                  timeZone: "America/Guatemala",
+                  day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+                  hour12: false,
                 })}
               </div>
             </Link>
