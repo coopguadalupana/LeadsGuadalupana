@@ -16,6 +16,8 @@ interface Conversacion {
   asignado_nombre: string | null;
   ultimo_mensaje: string | null;
   msgs_no_leidos: number;
+  cliente_nombre?: string | null;
+  etiquetas?: string | null;
 }
 
 export default function InboxPage() {
@@ -106,7 +108,9 @@ export default function InboxPage() {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="truncate font-semibold" style={{ color: "#003160" }}>{c.contacto_externo_id}</p>
+                  <p className="truncate font-semibold" style={{ color: "#003160" }}>
+                    {c.cliente_nombre || c.contacto_externo_id}
+                  </p>
                   {c.msgs_no_leidos > 0 && (
                     <span className="inline-flex size-5 items-center justify-center rounded-full text-xs font-medium text-white" style={{ background: "#cf2e2e" }}>
                       {c.msgs_no_leidos}
@@ -121,6 +125,11 @@ export default function InboxPage() {
                   <span className="text-xs" style={{ color: "#9ca3af" }}>
                     {c.asignado_nombre ? `Asignado: ${c.asignado_nombre}` : c.plataforma}
                   </span>
+                  {c.etiquetas && (() => {
+                    try { return JSON.parse(c.etiquetas).map((t: string) => (
+                      <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs" style={{ color: "#6b7280" }}>{t}</span>
+                    )); } catch { return null; }
+                  })()}
                 </div>
               </div>
               <div className="ml-4 shrink-0 text-right text-xs" style={{ color: "#9ca3af" }}>

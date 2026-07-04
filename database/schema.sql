@@ -103,6 +103,21 @@ CREATE TABLE lg_flows (
 
 CREATE INDEX IX_lg_flows_agencia ON lg_flows(agencia_id, activo);
 
+-- Tabla: contactos (datos del cliente compartidos entre conversaciones)
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_contactos' AND xtype='U')
+CREATE TABLE lg_contactos (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    agencia_id      INT             NOT NULL REFERENCES lg_agencias(id),
+    telefono        NVARCHAR(50)    NOT NULL,
+    nombre          NVARCHAR(200)   NULL,
+    dpi             NVARCHAR(20)    NULL,
+    etiquetas       NVARCHAR(500)   NULL, -- JSON array: ["vip","credito","seguimiento"]
+    notas           NVARCHAR(MAX)   NULL,
+    creado          DATETIME2       NOT NULL DEFAULT GETDATE(),
+    actualizado     DATETIME2       NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT UQ_lg_contactos_agencia_telefono UNIQUE (agencia_id, telefono)
+);
+
 -- Tabla: cache de atribucion de anuncios
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_ads_cache' AND xtype='U')
 CREATE TABLE lg_ads_cache (

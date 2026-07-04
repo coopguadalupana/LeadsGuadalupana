@@ -20,6 +20,10 @@ interface Conversacion {
   estado: string;
   mensajes: Mensaje[];
   motivo_cierre?: string | null;
+  cliente_nombre?: string | null;
+  cliente_dpi?: string | null;
+  etiquetas?: string | null;
+  contacto_id?: number | null;
 }
 
 export default function ChatPage({
@@ -45,6 +49,11 @@ export default function ChatPage({
   const [motivoCierre, setMotivoCierre] = useState("");
   const [cerrando, setCerrando] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [mostrarDetalles, setMostrarDetalles] = useState(false);
+  const [clienteNombre, setClienteNombre] = useState("");
+  const [clienteDpi, setClienteDpi] = useState("");
+  const [clienteTags, setClienteTags] = useState("");
+  const [guardandoContacto, setGuardandoContacto] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
@@ -75,6 +84,34 @@ export default function ChatPage({
   useEffect(() => {
     apiGet<Array<{ id: number; nombre: string; rol: string; agencia_nombre?: string; agencia_id: number }>>("/agency/agents").then(setAgentes).catch(() => {});
   }, []);
+
+  function mostrarDetallesContacto() {
+    if (!conv) return;
+    setClienteNombre(conv.cliente_nombre ?? "");
+    setClienteDpi(conv.cliente_dpi ?? "");
+    setClienteTags(conv.etiquetas ?? "");
+    setMostrarDetalles(true);
+  }
+
+  async function guardarContacto() {
+    if (!conv || guardandoContacto) return;
+    setGuardandoContacto(true);
+    try {
+      const tags = clienteTags.split(",").map(t => t.trim()).filter(Boolean);
+      await apiPatch("/contacts", {
+        telefono: conv.contacto_externo_id,
+        nombre: clienteNombre || null,
+        dpi: clienteDpi || null,
+        etiquetas: tags.length ? JSON.stringify(tags) : null,
+      });
+      setMostrarDetalles(false);
+      await fetchConv();
+    } catch {
+      setErrorMsg("Error al guardar contacto");
+    } finally {
+      setGuardandoContacto(false);
+    }
+  }
 
   async function cerrarConversacion() {
     if (!motivoCierre.trim() || cerrando) return;
@@ -171,6 +208,14 @@ export default function ChatPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={mostrarDetallesContacto}
+              aria-label="Detalles del contacto"
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+              style={{ background: "#e8f0fe", color: "#0e5bb0" }}
+            >
+              Detalles
+            </button>
             {conv.estado !== "cerrada" && (
               <button
                 onClick={() => setMostrarCerrar(true)}
@@ -197,7 +242,7 @@ export default function ChatPage({
       {/* Modal de transferencia */}
       {mostrarTransferir && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-bold" style={{ color: "#003160" }}>Transferir conversacion</h3>
               <button onClick={() => { setMostrarTransferir(false); setBusquedaAgente(""); }} className="text-gray-400 hover:text-gray-600">✕</button>
@@ -260,6 +305,51 @@ export default function ChatPage({
                 .filter(a => !busquedaAgente || a.nombre.toLowerCase().includes(busquedaAgente.toLowerCase()))
                 .filter(a => !filtroAgencia || a.agencia_nombre === filtroAgencia).length} de {agentes.length - 1} agentes disponibles
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de detalles del contacto */}
+      {mostrarDetalles && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold" style={{ color: "#003160" }}>Detalles del contacto</h3>
+              <button onClick={() => setMostrarDetalles(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Telefono</label>
+              <p className="text-sm font-medium" style={{ color: "#464646" }}>{conv?.contacto_externo_id}</p>
+            </div>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Nombre del cliente</label>
+              <input type="text" value={clienteNombre} onChange={(e) => setClienteNombre(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                style={{ borderColor: "#e5e5e5", color: "#464646" }} placeholder="Nombre completo" />
+            </div>
+
+            <div className="mb-3">
+              <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>DPI</label>
+              <input type="text" value={clienteDpi} onChange={(e) => setClienteDpi(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                style={{ borderColor: "#e5e5e5", color: "#464646" }} placeholder="0000 00000 0000" />
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Etiquetas</label>
+              <input type="text" value={clienteTags} onChange={(e) => setClienteTags(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                style={{ borderColor: "#e5e5e5", color: "#464646" }} placeholder="vip, credito, seguimiento" />
+              <p className="mt-1 text-xs" style={{ color: "#9ca3af" }}>Separadas por coma</p>
+            </div>
+
+            <button onClick={guardarContacto} disabled={guardandoContacto}
+              className="w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+              style={{ background: "#0e5bb0" }}>
+              {guardandoContacto ? "Guardando..." : "Guardar"}
+            </button>
           </div>
         </div>
       )}
