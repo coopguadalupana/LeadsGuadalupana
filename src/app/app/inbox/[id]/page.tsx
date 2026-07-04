@@ -150,20 +150,20 @@ export default function ChatPage({
     setErrorMsg("");
     setEnviando(true);
     setTexto("");
-    // Optimistic update: show message immediately
-    setConv((prev) => {
-      if (!prev) return prev;
-      const now = new Date().toISOString();
-      return {
-        ...prev,
-        mensajes: [...prev.mensajes, { id: -Date.now(), role: "agente", tipo: "texto", contenido: JSON.stringify({ text: msgTexto }), recibido: now } as Mensaje],
-      };
-    });
     try {
-      await apiPost(`/conversations/${id}/send`, { texto: msgTexto });
-      await fetchConv();
+      const res = await fetch(apiUrl(`/conversations/${id}/send`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: msgTexto }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        setErrorMsg(err.error || `Error ${res.status}`);
+      } else {
+        await fetchConv();
+      }
     } catch (e) {
-      setErrorMsg("Error al enviar: " + (e instanceof Error ? e.message : "desconocido"));
+      setErrorMsg("Error de red al enviar");
     } finally {
       setEnviando(false);
     }
