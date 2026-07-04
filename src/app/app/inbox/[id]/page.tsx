@@ -4,6 +4,7 @@ import { use, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { apiGet, apiPost, apiPatch, apiUrl } from "@/lib/client-api";
+import { formatGtTime } from "@/lib/format-date";
 
 interface Mensaje {
   id: number;
@@ -484,7 +485,7 @@ export default function ChatPage({
                   </p>
                 )}
                 <p className="mt-1 text-right text-xs opacity-60" style={{ color: msg.role === "agente" ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
-                  {new Date(msg.recibido).toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                  {formatGtTime(msg.recibido)}
                 </p>
               </div>
             </div>

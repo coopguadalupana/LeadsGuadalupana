@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiGet, apiPatch } from "@/lib/client-api";
+import { formatGtDate } from "@/lib/format-date";
 
 interface Lead {
   id: number;
@@ -131,7 +132,7 @@ export default function LeadsPage() {
                   </td>
                   <td className="px-4 py-3" style={{ color: "#6b7280" }}>{l.asignado_nombre ?? "-"}</td>
                   <td className="px-4 py-3" style={{ color: "#9ca3af" }}>
-                    {new Date(l.creado).toLocaleDateString("es-GT")}
+                    {formatGtDate(l.creado)}
                   </td>
                 </tr>
               );
