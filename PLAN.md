@@ -1,7 +1,7 @@
 # Plan de Implementación — leadsGuadalupana
 
-> **Última actualización:** 2026-07-02
-> **Estado general:** ⬜ Pendiente configuracion inicial
+> **Última actualización:** 2026-07-04
+> **Estado general:** 🟢 En produccion — 4 conversaciones reales, login funcional, UI con brand cooperativa
 
 ---
 
@@ -29,9 +29,14 @@
 - [x] Fase 4 — Ad Attribution (Meta Graph API)
 - [x] Fase 5 — Flow Engine (auto-respuesta)
 - [x] Fase 6 — API REST
-- [x] Fase 7 — Frontend
+- [x] Fase 7 — Frontend (UI completa + mejoras)
+- [x] Fase 7a — Roles y permisos (agent/supervisor/admin/flow_admin/superadmin)
+- [x] Fase 7b — Media proxy (imagenes, video, audio, documentos)
+- [x] Fase 7c — Read receipts (marcar como leido + notificar WhatsApp)
+- [x] Fase 7d — Transferencia de conversaciones entre agentes
+- [x] Fase 7e — Brand UI (colores cooperativa: rojo #cf2e2e, azul #003160)
 - [ ] Fase 8 — Instagram & Facebook Messenger
-- [ ] Fase 9 — Despliegue (Nginx + PM2)
+- [x] Fase 9 — Despliegue (Nginx + PM2 + basePath)
 - [ ] Fase 10 — Testing
 
 ---
@@ -168,6 +173,14 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Fase 6 — API REST
 
+**Mejoras implementadas:**
+- Roles y permisos en cada endpoint (`canViewAllConversations`, `canManageFlows`, etc.)
+- Supervisores pueden ver todas las agencias via `?agencia_id=` filter
+- `PATCH /api/conversations/[id]` permite cambiar `agencia_id`, `estado`, `asignado_a`
+- `POST /api/conversations/[id]/read` — read receipt + tracking
+- `GET /api/agency/agents` — listar agentes (scoped por rol)
+- `GET /api/media/[id]` — proxy de multimedia WhatsApp
+
 **Objetivo:** Endpoints para el frontend.
 
 | Endpoint | Métodos | Propósito | Estado |
@@ -221,9 +234,9 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 | # | Tarea | Estado |
 |---|-------|--------|
-| 9.1 | `ecosystem.config.js` (PM2) | ⬜ |
-| 9.2 | Config Nginx reverse proxy | ⬜ |
-| 9.3 | Health check endpoint | ⬜ |
+| 9.1 | `ecosystem.config.js` (PM2) — 2 instancias (3007/3008) | ✅ |
+| 9.2 | Config Nginx reverse proxy — `/leads/` y `/agencia/` | ✅ |
+| 9.3 | Health check endpoint — `/api/health` | ✅ |
 | 9.4 | Logrotate para PM2 logs | ⬜ |
 | 9.5 | Script de deploy (`deploy.sh`) | ⬜ |
 
@@ -256,4 +269,4 @@ META_WEBHOOK_VERIFY_TOKEN=
 
 ## Estado de fases activa
 
-> **Fase actual:** Fases 0-7 completadas. Pendiente: deploy, conexion SQL Server y configuracion Meta webhook.
+> **Fase actual:** Fase 0-7 completadas (incluyendo subfases). En produccion con Nginx + PM2. Pendiente: Instagram/Facebook y testing formal.
