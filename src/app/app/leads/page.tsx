@@ -1,7 +1,8 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
-import { query } from "@/lib/db";
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Lead {
   id: number;
@@ -14,35 +15,66 @@ interface Lead {
   creado: string;
 }
 
-export default async function LeadsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ calificacion?: string }>;
-}) {
-  const session = await getServerSession(authOptions);
-  const user = session?.user as unknown as { agencia_id: number } | undefined;
-  const sp = await searchParams;
+const COLORS: Record<string, string> = {
+  hot: "bg-red-100 text-red-700",
+  warm: "bg-yellow-100 text-yellow-700",
+  cold: "bg-gray-100 text-gray-600",
+};
 
-  const params: Record<string, unknown> = { agenciaId: user?.agencia_id ?? 0 };
-  let sql = `SELECT l.*, u.nombre AS asignado_nombre
-             FROM lg_leads l
-             LEFT JOIN lg_usuarios u ON u.id = l.asignado_a
-             WHERE l.agencia_id = @agenciaId`;
+export default function LeadsPage() {
+  const router = useRouter();
+  const sp = useSearchParams();
+  const filtro = sp.get("calificacion") ?? "";
 
-  if (sp.calificacion) {
-    sql += ` AND l.calificacion = @calificacion`;
-    params.calificacion = sp.calificacion;
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+      const params = new URLSearchParams();
+      if (filtro) params.set("calificacion", filtro);
+      const res = await fetch(`/api/leads?${params}`);
+      if (res.ok) setLeads(await res.json());
+    }
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [filtro]);
+
+  async function cambiarCalificacion(id: number, valor: string) {
+    await fetch(`/api/leads/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ calificacion: valor }),
+    });
+    setLeads((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, calificacion: valor } : l))
+    );
   }
-
-  sql += ` ORDER BY l.creado DESC`;
-  const leads = await query<Lead>(sql, params);
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <form>
-          <select name="calificacion" defaultValue={sp.calificacion ?? ""} className="rounded border px-3 py-1 text-sm">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            const v = f.get("calificacion") as string;
+            const p = new URLSearchParams();
+            if (v) p.set("calificacion", v);
+            router.push(`/app/leads?${p}`);
+          }}
+        >
+          <select
+            name="calificacion"
+            defaultValue={filtro}
+            onChange={(e) => {
+              const p = new URLSearchParams();
+              if (e.target.value) p.set("calificacion", e.target.value);
+              router.push(`/app/leads?${p}`);
+            }}
+            className="rounded border px-3 py-1 text-sm"
+          >
             <option value="">Todas</option>
             <option value="hot">Hot</option>
             <option value="warm">Warm</option>
@@ -66,21 +98,28 @@ export default async function LeadsPage({
             {leads.map((l) => (
               <tr key={l.id} className="border-b last:border-0 hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">
-                  <Link href={`/app/inbox/${l.conversacion_id}`} className="text-blue-600 hover:underline">
+                  <Link
+                    href={`/app/inbox/${l.conversacion_id}`}
+                    className="text-blue-600 hover:underline"
+                  >
                     {l.nombre ?? "(sin nombre)"}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-600">{l.telefono}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    l.calificacion === "hot" ? "bg-red-100 text-red-700" :
-                    l.calificacion === "warm" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-gray-100 text-gray-600"
-                  }`}>
-                    {l.calificacion ?? "-"}
-                  </span>
+                  <select
+                    value={l.calificacion ?? ""}
+                    onChange={(e) => cambiarCalificacion(l.id, e.target.value)}
+                    className={`rounded px-2 py-0.5 text-xs font-medium ${COLORS[l.calificacion ?? ""] ?? "bg-gray-100 text-gray-600"}`}
+                  >
+                    <option value="hot">Hot</option>
+                    <option value="warm">Warm</option>
+                    <option value="cold">Cold</option>
+                  </select>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{l.asignado_nombre ?? "-"}</td>
+                <td className="px-4 py-3 text-gray-600">
+                  {l.asignado_nombre ?? "-"}
+                </td>
                 <td className="px-4 py-3 text-gray-400">
                   {new Date(l.creado).toLocaleDateString("es-GT")}
                 </td>
@@ -88,7 +127,9 @@ export default async function LeadsPage({
             ))}
           </tbody>
         </table>
-        {leads.length === 0 && <p className="py-8 text-center text-gray-400">No hay leads</p>}
+        {leads.length === 0 && (
+          <p className="py-8 text-center text-gray-400">No hay leads</p>
+        )}
       </div>
     </div>
   );
