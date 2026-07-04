@@ -67,7 +67,7 @@ Tablas con prefijo `lg_`:
 - `lg_flows` — Flujos de auto-respuesta configurables (JSON triggers + pasos)
 - `lg_ads_cache` — Caché de atribución de anuncios vía Meta Graph API
 
-Estados de conversación: `auto_respondiendo` → `en_espera` → `en_curso` → `cerrada`
+Estados de conversación: `en_espera` → `auto_respondiendo` → `en_curso` → `cerrada`
 
 ## Despliegue
 
