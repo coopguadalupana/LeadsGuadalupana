@@ -9,13 +9,21 @@ import {
 import type { Flow, FlowState } from "@/lib/flows/types";
 
 function parseFlow(raw: Record<string, unknown>): Flow {
-  const parsed = {
+  function parseJson(val: unknown): unknown {
+    if (typeof val !== "string") return val;
+    try {
+      const parsed = JSON.parse(val);
+      return typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+    } catch {
+      return val;
+    }
+  }
+
+  return {
     ...raw,
-    trigger: typeof raw.trigger === "string" ? JSON.parse(raw.trigger as string) : raw.trigger,
-    pasos: typeof raw.pasos === "string" ? JSON.parse(raw.pasos as string) : raw.pasos,
+    trigger: parseJson(raw.trigger),
+    pasos: parseJson(raw.pasos),
   } as unknown as Flow;
-  console.log("parseFlow result:", JSON.stringify({ nombre: parsed.nombre, trigger: parsed.trigger, pasos: parsed.pasos?.length }));
-  return parsed;
 }
 
 export async function processMessage(
