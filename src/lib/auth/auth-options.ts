@@ -30,7 +30,7 @@ export const authOptions: NextAuthOptions = {
           `SELECT u.id, u.agencia_id, u.rol, u.nombre
            FROM lg_usuarios u
            JOIN lg_agencias a ON a.id = u.agencia_id
-           WHERE (u.ldap_sam = @sam OR u.ldap_sam = @upn) AND a.activa = 1`,
+           WHERE (u.ldap_sam = @sam OR u.ldap_sam = @upn)`,
           { sam: ldapUser.sAMAccountName, upn: ldapUser.userPrincipalName ?? "" }
         );
 
@@ -61,9 +61,13 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect() {
+      return "/app/inbox";
+    },
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   session: {
     strategy: "jwt",

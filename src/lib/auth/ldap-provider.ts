@@ -51,37 +51,55 @@ export async function authenticateLDAP(
     const safeUsername = username.replace(/[\\*()\0]/g, "\\$&");
     const searchDN = `(&(sAMAccountName=${safeUsername})(objectClass=user))`;
 
-    const entries: ldapjs.SearchEntry[] = await new Promise((resolve, reject) => {
-      const results: ldapjs.SearchEntry[] = [];
-      client.search(baseDN, { scope: "sub", filter: searchDN }, (err, res) => {
-        if (err) return reject(new Error(`LDAP search failed: ${err.message}`));
-        res.on("searchEntry", (entry) => results.push(entry));
-        res.on("error", (e) => reject(e));
-        res.on("end", () => resolve(results));
+    let entries: ldapjs.SearchEntry[] = [];
+    try {
+      entries = await new Promise((resolve, reject) => {
+        const results: ldapjs.SearchEntry[] = [];
+        client.search(baseDN, { scope: "sub", filter: searchDN }, (err, res) => {
+          if (err) return reject(new Error(`LDAP search failed: ${err.message}`));
+          res.on("searchEntry", (entry) => results.push(entry));
+          res.on("error", (e) => reject(e));
+          res.on("end", () => resolve(results));
+        });
       });
-    });
+    } catch (e) {
+      console.error("LDAP search error:", e);
+      return null;
+    }
 
-    if (entries.length === 0) return null;
+    if (entries.length === 0) {
+      console.warn("LDAP: usuario no encontrado:", username);
+      return null;
+    }
 
     const entry = entries[0]!;
     const userDN = entry.dn.toString();
     const attrs = entry.attributes;
 
     const getAttr = (name: string): string | undefined => {
-      const a = attrs.find((x) => x.type.toLowerCase() === name.toLowerCase());
-      return a?.vals?.[0]?.toString();
+      try {
+        const a = attrs.find((x) => x?.type?.toLowerCase() === name.toLowerCase());
+        return a?.vals?.[0]?.toString();
+      } catch {
+        return undefined;
+      }
     };
 
     const subou = extractSubouAgencia(userDN);
 
-    await new Promise<void>((resolve, reject) => {
-      const userClient = ldapjs.createClient({ url });
-      userClient.bind(userDN, password, (err) => {
-        userClient.unbind(() => {});
-        if (err) reject(new Error("Credenciales invalidas"));
-        else resolve();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const userClient = ldapjs.createClient({ url });
+        userClient.bind(userDN, password, (err) => {
+          userClient.unbind(() => {});
+          if (err) reject(new Error("Credenciales invalidas"));
+          else resolve();
+        });
       });
-    });
+    } catch (e) {
+      console.error("LDAP user bind error:", e);
+      return null;
+    }
 
     return {
       dn: userDN,
