@@ -23,7 +23,7 @@ CREATE TABLE lg_usuarios (
     nombre          NVARCHAR(200)   NOT NULL,
     email           NVARCHAR(200)   NULL,
     agencia_id      INT             NOT NULL REFERENCES lg_agencias(id),
-    rol             NVARCHAR(20)    NOT NULL DEFAULT 'agent' CHECK (rol IN ('admin','agent','supervisor')),
+    rol             NVARCHAR(20)    NOT NULL DEFAULT 'agent' CHECK (rol IN ('agent','supervisor','admin','flow_admin','superadmin')),
     creado          DATETIME2       NOT NULL DEFAULT GETDATE(),
     actualizado     DATETIME2       NOT NULL DEFAULT GETDATE(),
     CONSTRAINT UQ_lg_usuarios_ldap_sam UNIQUE (ldap_sam)

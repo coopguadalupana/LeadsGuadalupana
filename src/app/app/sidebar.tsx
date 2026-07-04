@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-
-const navItems = [
-  { href: "/app/inbox", label: "Inbox", icon: "💬" },
-  { href: "/app/leads", label: "Leads", icon: "👤" },
-  { href: "/app/flows", label: "Flujos", icon: "⚙️" },
-  { href: "/app/ads", label: "Anuncios", icon: "📊" },
-  { href: "/app/config", label: "Config", icon: "🔧" },
-];
+import { canManageFlows, canManageUsers } from "@/lib/auth/permissions";
 
 export default function Sidebar({
   userName,
@@ -21,15 +14,23 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
 
+  const navItems = [
+    { href: "/app/inbox", label: "Inbox", icon: "💬", show: true },
+    { href: "/app/leads", label: "Leads", icon: "👤", show: true },
+    { href: "/app/flows", label: "Flujos", icon: "⚙️", show: canManageFlows(rol) },
+    { href: "/app/ads", label: "Anuncios", icon: "📊", show: true },
+    { href: "/app/config", label: "Config", icon: "🔧", show: canManageUsers(rol) },
+  ];
+
   return (
     <aside className="flex w-64 flex-col" style={{ background: "#003160" }}>
       <div className="border-b px-5 py-5" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
         <h2 className="text-lg font-bold text-white">leadsGuadalupana</h2>
-        <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.6)" }}>{rol}</p>
+        <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.6)" }}>{rol.replace("_", " ")}</p>
       </div>
 
       <nav className="flex-1 space-y-0.5 p-3">
-        {navItems.map((item) => {
+        {navItems.filter(i => i.show).map((item) => {
           const active = pathname.startsWith(item.href);
           return (
             <Link
@@ -51,6 +52,7 @@ export default function Sidebar({
 
       <div className="border-t p-4" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
         <p className="mb-2 truncate text-sm text-white/80">{userName}</p>
+        <p className="mb-2 text-xs text-white/50">{rol.replace("_", " ")}</p>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="text-xs text-white/50 hover:text-white transition-colors"

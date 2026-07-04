@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth/session";
+import { canManageFlows } from "@/lib/auth/permissions";
 import { execute } from "@/lib/db";
 
 export async function PUT(
@@ -8,6 +9,9 @@ export async function PUT(
 ) {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
+  if (!canManageFlows(auth.user.rol)) {
+    return NextResponse.json({ error: "No tienes permiso para editar flujos" }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = await req.json();
@@ -40,6 +44,9 @@ export async function DELETE(
 ) {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
+  if (!canManageFlows(auth.user.rol)) {
+    return NextResponse.json({ error: "No tienes permiso para eliminar flujos" }, { status: 403 });
+  }
 
   const { id } = await params;
 
