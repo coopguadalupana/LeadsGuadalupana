@@ -45,10 +45,12 @@ export async function POST(
     }
   }
 
-  // Update local read tracking
+  // Mark conversation as in progress when agent opens it
+  const estadoUpdate = conv.estado === "en_espera" ? ", estado = 'en_curso'" : "";
+
   await execute(
     `UPDATE lg_conversaciones
-     SET leido_por = @userId, ultima_lectura = GETDATE(), actualizado = GETDATE()
+     SET leido_por = @userId, ultima_lectura = GETDATE(), actualizado = GETDATE()${estadoUpdate}
      WHERE id = @id`,
     { userId: Number(auth.user.id), id: conv.id }
   );

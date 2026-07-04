@@ -21,7 +21,7 @@ interface Conversacion {
 export default function InboxPage() {
   const router = useRouter();
   const sp = useSearchParams();
-  const estado = sp.get("estado") ?? "auto_respondiendo";
+  const estado = sp.get("estado") ?? "todas";
   const q = sp.get("q") ?? "";
 
   const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
