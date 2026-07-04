@@ -3,7 +3,7 @@
 import { use, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { apiGet, apiPost, apiPatch } from "@/lib/client-api";
+import { apiGet, apiPost, apiPatch, apiUrl } from "@/lib/client-api";
 
 interface Mensaje {
   id: number;
@@ -126,7 +126,7 @@ export default function ChatPage({
     try {
       const formData = new FormData();
       formData.append("media", file);
-      const res = await fetch(`/leads/api/conversations/${id}/send`, {
+      const res = await fetch(apiUrl(`/conversations/${id}/send`), {
         method: "POST",
         body: formData,
       });
