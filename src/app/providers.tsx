@@ -7,5 +7,5 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  return <SessionProvider basePath="/leads">{children}</SessionProvider>;
+  return <SessionProvider basePath="/leads/api/auth">{children}</SessionProvider>;
 }
