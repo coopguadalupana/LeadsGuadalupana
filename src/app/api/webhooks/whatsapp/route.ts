@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         const result = await execute(
           `INSERT INTO lg_conversaciones (agencia_id, plataforma, contacto_externo_id, ad_id, campaign_id, estado)
            OUTPUT INSERTED.id
-           VALUES (@agenciaId, @plataforma, @contacto, @adId, @campaignId, 'auto_respondiendo')`,
+           VALUES (@agenciaId, @plataforma, @contacto, @adId, @campaignId, 'en_espera')`,
           { agenciaId, plataforma, contacto: msg.wa_id, adId, campaignId }
         );
         const inserted = result.recordset as Array<{ id: number }>;
@@ -113,10 +113,10 @@ export async function POST(req: NextRequest) {
       } else {
         convId = conversaciones[0]!.id;
 
-        // Si estaba cerrada o en_curso y vuelve a escribir, reabrir auto-response
+        // Si estaba en_curso y vuelve a escribir, reabrir a en_espera
         if (conversaciones[0]!.estado === "en_curso") {
           await execute(
-            `UPDATE lg_conversaciones SET estado = 'auto_respondiendo', actualizado = GETDATE()
+            `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = GETDATE()
              WHERE id = @id`,
             { id: convId }
           );

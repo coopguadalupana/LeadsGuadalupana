@@ -82,6 +82,10 @@ export async function PATCH(
   if (body.estado !== undefined) {
     updates.push("estado = @estado");
     paramsObj.estado = body.estado;
+    if (body.estado === "cerrada" && body.motivo_cierre !== undefined) {
+      updates.push("motivo_cierre = @motivoCierre");
+      paramsObj.motivoCierre = body.motivo_cierre;
+    }
   }
 
   if (body.agencia_id !== undefined) {

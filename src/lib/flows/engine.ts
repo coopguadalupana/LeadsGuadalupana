@@ -118,7 +118,7 @@ export async function executeFlow(
 
     case "escalate_to_human": {
       await execute(
-        `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = GETDATE()
+        `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETDATE()
          WHERE id = @id`,
         { id: conversacionId }
       );

@@ -38,12 +38,13 @@ CREATE TABLE lg_conversaciones (
     contacto_externo_id NVARCHAR(100)   NOT NULL, -- wa_id / ig_id / fb_id
     ad_id               NVARCHAR(100)   NULL,
     campaign_id         NVARCHAR(100)   NULL,
-    estado              NVARCHAR(20)    NOT NULL DEFAULT 'auto_respondiendo'
-                        CHECK (estado IN ('auto_respondiendo','en_espera','en_curso','cerrada')),
+    estado              NVARCHAR(20)    NOT NULL DEFAULT 'en_espera'
+                        CHECK (estado IN ('en_espera','auto_respondiendo','en_curso','cerrada')),
     flow_state          NVARCHAR(MAX)   NULL, -- JSON: estado actual del flow de auto-respuesta
     asignado_a          INT             NULL REFERENCES lg_usuarios(id),
     leido_por           INT             NULL REFERENCES lg_usuarios(id),
     ultima_lectura      DATETIME2       NULL,
+    motivo_cierre       NVARCHAR(500)   NULL,
     creado              DATETIME2       NOT NULL DEFAULT GETDATE(),
     actualizado         DATETIME2       NOT NULL DEFAULT GETDATE()
 );

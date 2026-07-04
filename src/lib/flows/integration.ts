@@ -91,6 +91,8 @@ export async function processMessage(
     console.log("processMessage: evaluando flow", flow.nombre, "match:", match);
     if (match) {
       console.log("processMessage: flow disparado!", flow.nombre);
+      // Cambiar a estado auto_respondiendo
+      await execute(`UPDATE lg_conversaciones SET estado = 'auto_respondiendo', actualizado = GETDATE() WHERE id = @id`, { id: conversacionId });
       currentState = createInitialState(flow);
       const { newState, finalizado } = await executeFlow(
         flow,

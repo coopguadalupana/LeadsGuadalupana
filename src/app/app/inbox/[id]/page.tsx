@@ -19,6 +19,7 @@ interface Conversacion {
   plataforma: string;
   estado: string;
   mensajes: Mensaje[];
+  motivo_cierre?: string | null;
 }
 
 export default function ChatPage({
@@ -38,6 +39,9 @@ export default function ChatPage({
   const [agentes, setAgentes] = useState<Array<{ id: number; nombre: string }>>([]);
   const [mostrarTransferir, setMostrarTransferir] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState(false);
+  const [mostrarCerrar, setMostrarCerrar] = useState(false);
+  const [motivoCierre, setMotivoCierre] = useState("");
+  const [cerrando, setCerrando] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
@@ -68,6 +72,19 @@ export default function ChatPage({
   useEffect(() => {
     apiGet<Array<{ id: number; nombre: string }>>("/agency/agents").then(setAgentes).catch(() => {});
   }, []);
+
+  async function cerrarConversacion() {
+    if (!motivoCierre.trim() || cerrando) return;
+    setCerrando(true);
+    try {
+      await apiPatch(`/conversations/${id}`, { estado: "cerrada", motivo_cierre: motivoCierre });
+      setMostrarCerrar(false);
+      setMotivoCierre("");
+      await fetchConv();
+    } finally {
+      setCerrando(false);
+    }
+  }
 
   async function transferir(agenteId: number) {
     setTransfiriendo(true);
@@ -134,19 +151,38 @@ export default function ChatPage({
               &larr; Volver
             </button>
             <h2 className="text-lg font-bold" style={{ color: "#003160" }}>{conv.contacto_externo_id}</h2>
-            <p className="text-xs" style={{ color: "#9ca3af" }}>
-              {conv.plataforma} &middot; {conv.estado.replace("_", " ")}
-            </p>
+            <div className="flex items-center gap-2 text-xs" style={{ color: "#9ca3af" }}>
+              <span>{conv.plataforma}</span>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                conv.estado === "auto_respondiendo" ? "bg-green-100 text-green-700" :
+                conv.estado === "en_espera" ? "bg-yellow-100 text-yellow-700" :
+                conv.estado === "en_curso" ? "bg-blue-100 text-blue-700" :
+                "bg-gray-100 text-gray-500"
+              }`}>
+                {conv.estado.replace("_", " ")}
+              </span>
+              {conv.motivo_cierre && <span className="italic">Cerrado: {conv.motivo_cierre}</span>}
+            </div>
           </div>
-          <div className="relative">
-            <button
-              onClick={() => setMostrarTransferir(!mostrarTransferir)}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-              style={{ background: "#f0f0f0", color: "#464646" }}
-            >
-              Transferir
-            </button>
-            {mostrarTransferir && (
+          <div className="flex items-center gap-2">
+            {conv.estado !== "cerrada" && (
+              <button
+                onClick={() => setMostrarCerrar(true)}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{ background: "#fce4ec", color: "#c62828" }}
+              >
+                Cerrar
+              </button>
+            )}
+            <div className="relative">
+              <button
+                onClick={() => setMostrarTransferir(!mostrarTransferir)}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{ background: "#f0f0f0", color: "#464646" }}
+              >
+                Transferir
+              </button>
+              {mostrarTransferir && (
               <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border bg-white py-1 shadow-lg" style={{ borderColor: "#e5e5e5" }}>
                 <p className="px-3 py-1.5 text-xs font-medium" style={{ color: "#9ca3af" }}>Transferir a:</p>
                 {agentes.filter(a => a.id !== Number(authUserId)).map((a) => (
@@ -168,6 +204,34 @@ export default function ChatPage({
           </div>
         </div>
       </div>
+      </div>
+      {/* End header */}
+
+      {/* Dialogo de cierre */}
+      {mostrarCerrar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-lg font-bold" style={{ color: "#003160" }}>Cerrar conversacion</h3>
+            <p className="mb-4 text-sm" style={{ color: "#6b7280" }}>Indica el motivo del cierre:</p>
+            <textarea
+              value={motivoCierre}
+              onChange={(e) => setMotivoCierre(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              style={{ borderColor: "#e5e5e5", color: "#464646" }}
+              rows={3}
+              placeholder="Cliente atentido, informacion proporcionada..."
+            />
+            <div className="mt-4 flex gap-2">
+              <button onClick={() => setMostrarCerrar(false)} className="flex-1 rounded-lg px-4 py-2 text-sm font-medium" style={{ background: "#f0f0f0", color: "#464646" }}>
+                Cancelar
+              </button>
+              <button onClick={cerrarConversacion} disabled={cerrando || !motivoCierre.trim()} className="flex-1 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50" style={{ background: "#cf2e2e" }}>
+                {cerrando ? "Cerrando..." : "Cerrar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 space-y-3 overflow-y-auto py-4">
         {conv.mensajes.map((msg) => {
