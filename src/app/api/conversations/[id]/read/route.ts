@@ -50,7 +50,7 @@ export async function POST(
 
   await execute(
     `UPDATE lg_conversaciones
-     SET leido_por = @userId, ultima_lectura = GETDATE(), actualizado = GETDATE()${estadoUpdate}
+     SET leido_por = @userId, ultima_lectura = SYSUTCDATETIME(), actualizado = SYSUTCDATETIME()${estadoUpdate}
      WHERE id = @id`,
     { userId: Number(auth.user.id), id: conv.id }
   );

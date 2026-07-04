@@ -64,7 +64,7 @@ export async function POST(
 
     if (conv.estado === "en_espera") {
       await execute(
-        `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETDATE()
+        `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = SYSUTCDATETIME()
          WHERE id = @id`,
         { id: conv.id }
       );
@@ -96,7 +96,7 @@ export async function POST(
 
   if (conv.estado === "en_espera") {
     await execute(
-      `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETDATE()
+      `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = SYSUTCDATETIME()
        WHERE id = @id`,
       { id: conv.id }
     );

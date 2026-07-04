@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   // Upsert: create or update
-  const updates: string[] = ["actualizado = GETDATE()"];
+  const updates: string[] = ["actualizado = SYSUTCDATETIME()"];
   const paramsObj: Record<string, unknown> = { agenciaId: auth.user.agencia_id, telefono };
 
   if (nombre !== undefined) { updates.push("nombre = @nombre"); paramsObj.nombre = nombre; }

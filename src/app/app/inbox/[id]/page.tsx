@@ -471,7 +471,7 @@ export default function ChatPage({
                   </p>
                 )}
                 <p className="mt-1 text-right text-xs opacity-60" style={{ color: msg.role === "agente" ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
-                  {new Date(msg.recibido).toLocaleTimeString("es-GT")}
+                  {new Date(msg.recibido).toLocaleTimeString("es-GT", { timeZone: "America/Guatemala" })}
                 </p>
               </div>
             </div>

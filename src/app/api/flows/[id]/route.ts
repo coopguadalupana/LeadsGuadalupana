@@ -23,7 +23,7 @@ export async function PUT(
       [trigger] = @trigger,
       pasos = @pasos,
       version = version + 1,
-      actualizado = GETDATE()
+      actualizado = SYSUTCDATETIME()
      WHERE id = @id AND agencia_id = @agenciaId`,
     {
       id: Number(id),

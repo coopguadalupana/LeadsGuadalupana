@@ -92,7 +92,7 @@ export async function processMessage(
     if (match) {
       console.log("processMessage: flow disparado!", flow.nombre);
       // Cambiar a estado auto_respondiendo
-      await execute(`UPDATE lg_conversaciones SET estado = 'auto_respondiendo', actualizado = GETDATE() WHERE id = @id`, { id: conversacionId });
+      await execute(`UPDATE lg_conversaciones SET estado = 'auto_respondiendo', actualizado = SYSUTCDATETIME() WHERE id = @id`, { id: conversacionId });
       currentState = createInitialState(flow);
       const { newState, finalizado } = await executeFlow(
         flow,
@@ -115,7 +115,7 @@ async function saveState(
 ): Promise<void> {
   await execute(
     `UPDATE lg_conversaciones
-     SET flow_state = @flowState, actualizado = GETDATE()
+     SET flow_state = @flowState, actualizado = SYSUTCDATETIME()
      WHERE id = @id`,
     {
       flowState: state ? JSON.stringify(state) : null,

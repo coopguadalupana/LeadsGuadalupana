@@ -136,6 +136,7 @@ export default function InboxPage() {
                 {new Date(c.actualizado).toLocaleDateString("es-GT", {
                   day: "2-digit", month: "2-digit",
                   hour: "2-digit", minute: "2-digit",
+                  timeZone: "America/Guatemala",
                 })}
               </div>
             </Link>

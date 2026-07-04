@@ -131,7 +131,7 @@ export default function LeadsPage() {
                   </td>
                   <td className="px-4 py-3" style={{ color: "#6b7280" }}>{l.asignado_nombre ?? "-"}</td>
                   <td className="px-4 py-3" style={{ color: "#9ca3af" }}>
-                    {new Date(l.creado).toLocaleDateString("es-GT")}
+                    {new Date(l.creado).toLocaleDateString("es-GT", { timeZone: "America/Guatemala" })}
                   </td>
                 </tr>
               );
