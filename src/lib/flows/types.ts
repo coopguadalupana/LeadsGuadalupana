@@ -49,6 +49,6 @@ export interface FlowState {
   flowId: number;
   pasoActual: string;
   variables: Record<string, string>;
-  historial: Array<{ pasoId: string; accion: string }>;
+  historial: Array<{ pasoId: string; accion: string; detalle?: string }>;
   intentos: number;
 }

@@ -135,7 +135,7 @@ export async function executeFlow(
 
     case "conditional": {
       if (pasoActual.condicion) {
-        const valorVar = currentState.variables[pasoActual.condicion.campo] ?? "";
+        const valorVar = currentState.variables[pasoActual.condicion.campo] ?? mensajeTexto;
         let cumple = false;
 
         switch (pasoActual.condicion.operador) {
@@ -152,6 +152,7 @@ export async function executeFlow(
             break;
         }
 
+        currentState.historial.push({ pasoId: pasoActual.id, accion: "conditional", detalle: `${cumple ? "Si" : "No"}: ${valorVar}` });
         currentState.pasoActual = cumple
           ? pasoActual.condicion.paso_si
           : pasoActual.condicion.paso_no;

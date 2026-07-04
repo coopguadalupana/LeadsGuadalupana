@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
       );
 
       // Procesar auto-respuesta
-      const textContent = msg.text ?? msg.image_caption ?? "";
+      const textContent = msg.text ?? msg.image_caption ?? msg.interactive_reply?.title ?? "";
       await processMessage(convId, agenciaId, msg.wa_id, textContent);
     }
 

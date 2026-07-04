@@ -46,17 +46,20 @@ export async function processMessage(
     ? JSON.parse(conv.flow_state)
     : null;
 
-  if (currentState && isWaitingForAnswer(currentState)) {
+  // Si hay un flow activo, continuar ejecutandolo
+  if (currentState) {
     const raw = await query<Record<string, unknown>>(
       `SELECT * FROM lg_flows WHERE id = @flowId AND activo = 1`,
       { flowId: currentState.flowId }
     );
 
-    if (raw.length === 0) {
-      currentState = null;
-    } else {
+    if (raw.length > 0) {
       const flow = parseFlow(raw[0]!);
-      currentState = handleAnswer(currentState, flow, mensajeTexto);
+
+      if (isWaitingForAnswer(currentState)) {
+        currentState = handleAnswer(currentState, flow, mensajeTexto);
+      }
+
       const { newState, finalizado } = await executeFlow(
         flow,
         currentState,
@@ -64,13 +67,15 @@ export async function processMessage(
         waId,
         mensajeTexto
       );
-      currentState = newState;
-      if (finalizado) currentState = null;
+      currentState = finalizado ? null : newState;
       await saveState(conversacionId, currentState);
       return;
     }
+    // Flow ya no existe o esta inactivo, continuar a buscar nuevo flow
+    currentState = null;
   }
 
+  // Sin flow activo: buscar flow que coincida con el trigger
   const raw = await query<Record<string, unknown>>(
     `SELECT * FROM lg_flows WHERE agencia_id = @agenciaId AND activo = 1
      ORDER BY version DESC`,
