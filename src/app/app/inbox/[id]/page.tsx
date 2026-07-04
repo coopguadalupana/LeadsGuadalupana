@@ -172,6 +172,7 @@ export default function ChatPage({
             {conv.estado !== "cerrada" && (
               <button
                 onClick={() => setMostrarCerrar(true)}
+                aria-label="Cerrar conversacion"
                 className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 style={{ background: "#fce4ec", color: "#c62828" }}
               >
@@ -181,6 +182,7 @@ export default function ChatPage({
             <div className="relative">
               <button
                 onClick={() => setMostrarTransferir(!mostrarTransferir)}
+                aria-label="Transferir conversacion"
                 className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
                 style={{ background: "#f0f0f0", color: "#464646" }}
               >
@@ -337,9 +339,9 @@ export default function ChatPage({
           <button
             onClick={() => fileInput.current?.click()}
             disabled={subiendoImg}
+            aria-label="Adjuntar imagen o video"
             className="rounded-xl px-3 py-2.5 text-sm transition-opacity disabled:opacity-50"
             style={{ background: "#f0f0f0", color: "#464646" }}
-            title="Adjuntar imagen"
           >
             📎
           </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiGet, apiPatch } from "@/lib/client-api";
 
@@ -26,21 +26,27 @@ export default function LeadsPage() {
   const router = useRouter();
   const sp = useSearchParams();
   const filtro = sp.get("calificacion") ?? "";
+  const activeRef = useRef(true);
 
   const [leads, setLeads] = useState<Lead[]>([]);
 
   useEffect(() => {
+    activeRef.current = true;
+
     async function fetchData() {
       try {
         const params = new URLSearchParams();
         if (filtro) params.set("calificacion", filtro);
         const data = await apiGet<Lead[]>(`/leads?${params}`);
-        setLeads(data);
+        if (activeRef.current) setLeads(data);
       } catch {}
     }
     fetchData();
     const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
+    return () => {
+      activeRef.current = false;
+      clearInterval(interval);
+    };
   }, [filtro]);
 
   async function cambiarCalificacion(id: number, valor: string) {
@@ -73,7 +79,7 @@ export default function LeadsPage() {
               if (e.target.value) p.set("calificacion", e.target.value);
               router.push(`/app/leads?${p}`);
             }}
-            className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2"
+            className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             style={{ borderColor: "#e5e5e5", color: "#464646" }}
           >
             <option value="">Todas</option>
@@ -115,6 +121,7 @@ export default function LeadsPage() {
                       value={l.calificacion ?? ""}
                       onChange={(e) => cambiarCalificacion(l.id, e.target.value)}
                       className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none"
+                      aria-label="Cambiar calificacion"
                       style={{ background: badge.bg, color: badge.text, border: "none" }}
                     >
                       <option value="hot">Hot</option>

@@ -92,36 +92,47 @@ export async function POST(req: NextRequest) {
 
       const plataforma = "whatsapp";
 
-      // Buscar o crear conversacion
-      const conversaciones = await query<{ id: number; estado: string }>(
+      // Buscar o crear conversacion (con manejo de race condition)
+      let convId: number | null = null;
+      const existing = await query<{ id: number; estado: string }>(
         `SELECT id, estado FROM lg_conversaciones
          WHERE agencia_id = @agenciaId AND contacto_externo_id = @waId
            AND estado != 'cerrada'`,
         { agenciaId, waId: msg.wa_id }
       );
 
-      let convId: number;
-      if (conversaciones.length === 0) {
-        const result = await execute(
-          `INSERT INTO lg_conversaciones (agencia_id, plataforma, contacto_externo_id, ad_id, campaign_id, estado)
-           OUTPUT INSERTED.id
-           VALUES (@agenciaId, @plataforma, @contacto, @adId, @campaignId, 'en_espera')`,
-          { agenciaId, plataforma, contacto: msg.wa_id, adId, campaignId }
-        );
-        const inserted = result.recordset as Array<{ id: number }>;
-        convId = inserted[0]!.id;
-      } else {
-        convId = conversaciones[0]!.id;
-
-        // Si estaba en_curso y vuelve a escribir, reabrir a en_espera
-        if (conversaciones[0]!.estado === "en_curso") {
+      if (existing.length > 0) {
+        convId = existing[0]!.id;
+        if (existing[0]!.estado === "en_curso") {
           await execute(
             `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = GETDATE()
              WHERE id = @id`,
             { id: convId }
           );
         }
+      } else {
+        try {
+          const result = await execute(
+            `INSERT INTO lg_conversaciones (agencia_id, plataforma, contacto_externo_id, ad_id, campaign_id, estado)
+             OUTPUT INSERTED.id
+             VALUES (@agenciaId, @plataforma, @contacto, @adId, @campaignId, 'en_espera')`,
+            { agenciaId, plataforma, contacto: msg.wa_id, adId, campaignId }
+          );
+          convId = (result.recordset as Array<{ id: number }>)[0]!.id;
+        } catch {
+          // Race condition: otro webhook creo la conv justo ahora. Re-intentar SELECT.
+          const retry = await query<{ id: number; estado: string }>(
+            `SELECT id, estado FROM lg_conversaciones
+             WHERE agencia_id = @agenciaId AND contacto_externo_id = @waId
+               AND estado != 'cerrada'`,
+            { agenciaId, waId: msg.wa_id }
+          );
+          if (retry.length === 0) throw new Error("No se pudo crear ni encontrar la conversacion");
+          convId = retry[0]!.id;
+        }
       }
+
+      if (!convId) continue;
 
       // Idempotencia
       if (await isDuplicate(convId, msg.message_id)) continue;

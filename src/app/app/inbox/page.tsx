@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiGet } from "@/lib/client-api";
 
@@ -23,20 +23,32 @@ export default function InboxPage() {
   const sp = useSearchParams();
   const estado = sp.get("estado") ?? "todas";
   const q = sp.get("q") ?? "";
+  const activeRef = useRef(true);
 
   const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
 
   useEffect(() => {
+    activeRef.current = true;
+    const controller = new AbortController();
+
     async function fetchData() {
       const params = new URLSearchParams();
       if (estado !== "todas") params.set("estado", estado);
       if (q) params.set("q", q);
-      const data = await apiGet<Conversacion[]>(`/conversations?${params}`);
-      setConversaciones(data);
+      try {
+        const data = await apiGet<Conversacion[]>(`/conversations?${params}`);
+        if (activeRef.current) setConversaciones(data);
+      } catch {
+        // Silently ignore fetch errors during polling
+      }
     }
     fetchData();
     const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
+    return () => {
+      activeRef.current = false;
+      clearInterval(interval);
+      controller.abort();
+    };
   }, [estado, q]);
 
   function preview(c: Conversacion) {
@@ -101,7 +113,7 @@ export default function InboxPage() {
                     </span>
                   )}
                 </div>
-                <p className="truncate text-sm" style={{ color: "#6b7280" }}>{pv || "..."}</p>
+                <p className="truncate text-sm" aria-label="Ultimo mensaje" style={{ color: "#6b7280" }}>{pv || "..."}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={estadoStyle}>
                     {c.estado.replace("_", " ")}

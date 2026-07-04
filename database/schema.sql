@@ -50,7 +50,7 @@ CREATE TABLE lg_conversaciones (
 );
 
 CREATE INDEX IX_lg_conversaciones_agencia ON lg_conversaciones(agencia_id, estado);
-CREATE INDEX IX_lg_conversaciones_contacto ON lg_conversaciones(agencia_id, contacto_externo_id);
+CREATE UNIQUE NONCLUSTERED INDEX IX_lg_conversaciones_activa ON lg_conversaciones(agencia_id, contacto_externo_id) WHERE estado != 'cerrada';
 
 -- Tabla: mensajes
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_mensajes' AND xtype='U')

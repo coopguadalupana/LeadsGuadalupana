@@ -36,6 +36,7 @@ export default function Sidebar({
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 active
                   ? "font-medium text-white"
@@ -43,7 +44,7 @@ export default function Sidebar({
               }`}
               style={active ? { background: "#cf2e2e" } : undefined}
             >
-              <span>{item.icon}</span>
+              <span aria-hidden="true">{item.icon}</span>
               {item.label}
             </Link>
           );
