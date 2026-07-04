@@ -19,9 +19,11 @@ export async function GET() {
   }
 
   const agentes = await query<{ id: number; nombre: string; rol: string; agencia_id: number }>(
-    `SELECT id, nombre, rol, agencia_id FROM lg_usuarios
-     WHERE agencia_id = @agenciaId
-     ORDER BY nombre`,
+    `SELECT u.id, u.nombre, u.rol, u.agencia_id, a.nombre AS agencia_nombre
+     FROM lg_usuarios u
+     JOIN lg_agencias a ON a.id = u.agencia_id
+     WHERE u.agencia_id = @agenciaId
+     ORDER BY u.nombre`,
     { agenciaId: auth.user.agencia_id }
   );
 

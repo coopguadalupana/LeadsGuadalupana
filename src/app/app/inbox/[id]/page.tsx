@@ -36,9 +36,11 @@ export default function ChatPage({
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
   const [subiendoImg, setSubiendoImg] = useState(false);
-  const [agentes, setAgentes] = useState<Array<{ id: number; nombre: string }>>([]);
+  const [agentes, setAgentes] = useState<Array<{ id: number; nombre: string; rol: string; agencia_nombre?: string; agencia_id: number }>>([]);
   const [mostrarTransferir, setMostrarTransferir] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState(false);
+  const [busquedaAgente, setBusquedaAgente] = useState("");
+  const [filtroAgencia, setFiltroAgencia] = useState("");
   const [mostrarCerrar, setMostrarCerrar] = useState(false);
   const [motivoCierre, setMotivoCierre] = useState("");
   const [cerrando, setCerrando] = useState(false);
@@ -71,7 +73,7 @@ export default function ChatPage({
   }, [id]);
 
   useEffect(() => {
-    apiGet<Array<{ id: number; nombre: string }>>("/agency/agents").then(setAgentes).catch(() => {});
+    apiGet<Array<{ id: number; nombre: string; rol: string; agencia_nombre?: string; agencia_id: number }>>("/agency/agents").then(setAgentes).catch(() => {});
   }, []);
 
   async function cerrarConversacion() {
@@ -179,39 +181,88 @@ export default function ChatPage({
                 Cerrar
               </button>
             )}
-            <div className="relative">
-              <button
-                onClick={() => setMostrarTransferir(!mostrarTransferir)}
-                aria-label="Transferir conversacion"
-                className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-                style={{ background: "#f0f0f0", color: "#464646" }}
-              >
-                Transferir
-              </button>
-              {mostrarTransferir && (
-              <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border bg-white py-1 shadow-lg" style={{ borderColor: "#e5e5e5" }}>
-                <p className="px-3 py-1.5 text-xs font-medium" style={{ color: "#9ca3af" }}>Transferir a:</p>
-                {agentes.filter(a => a.id !== Number(authUserId)).map((a) => (
-                  <button
-                    key={a.id}
-                    onClick={() => transferir(a.id)}
-                    disabled={transfiriendo}
-                    className="block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-gray-50"
-                    style={{ color: "#464646" }}
-                  >
-                    {a.nombre}
-                  </button>
-                ))}
-                {agentes.length <= 1 && (
-                  <p className="px-3 py-1.5 text-xs" style={{ color: "#9ca3af" }}>No hay otros agentes</p>
-                )}
-              </div>
-            )}
-          </div>
+            <button
+              onClick={() => setMostrarTransferir(true)}
+              aria-label="Transferir conversacion"
+              className="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+              style={{ background: "#f0f0f0", color: "#464646" }}
+            >
+              Transferir
+            </button>
         </div>
       </div>
       </div>
       {/* End header */}
+
+      {/* Modal de transferencia */}
+      {mostrarTransferir && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold" style={{ color: "#003160" }}>Transferir conversacion</h3>
+              <button onClick={() => { setMostrarTransferir(false); setBusquedaAgente(""); }} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <div className="mb-3 flex gap-2">
+              <input
+                type="text"
+                value={busquedaAgente}
+                onChange={(e) => setBusquedaAgente(e.target.value)}
+                placeholder="Buscar por nombre..."
+                className="flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                style={{ borderColor: "#e5e5e5", color: "#464646" }}
+                autoFocus
+              />
+              {agentes.some(a => a.agencia_nombre) && (
+                <select
+                  value={filtroAgencia}
+                  onChange={(e) => setFiltroAgencia(e.target.value)}
+                  className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  style={{ borderColor: "#e5e5e5", color: "#464646" }}
+                >
+                  <option value="">Todas</option>
+                  {Array.from(new Set(agentes.filter(a => a.agencia_nombre).map(a => a.agencia_nombre!))).map(ag => (
+                    <option key={ag} value={ag}>{ag}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="max-h-64 space-y-1 overflow-y-auto">
+              {agentes
+                .filter(a => a.id !== Number(authUserId))
+                .filter(a => !busquedaAgente || a.nombre.toLowerCase().includes(busquedaAgente.toLowerCase()))
+                .filter(a => !filtroAgencia || a.agencia_nombre === filtroAgencia)
+                .map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => transferir(a.id)}
+                    disabled={transfiriendo}
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+                    style={{ color: "#464646" }}
+                  >
+                    <span className="font-medium">{a.nombre}</span>
+                    <span className="text-xs" style={{ color: "#9ca3af" }}>
+                      {a.rol.replace("_", " ")}
+                      {a.agencia_nombre && ` · ${a.agencia_nombre}`}
+                    </span>
+                  </button>
+                ))}
+              {agentes.filter(a => a.id !== Number(authUserId))
+                .filter(a => !busquedaAgente || a.nombre.toLowerCase().includes(busquedaAgente.toLowerCase()))
+                .filter(a => !filtroAgencia || a.agencia_nombre === filtroAgencia).length === 0 && (
+                <p className="py-4 text-center text-sm" style={{ color: "#9ca3af" }}>No se encontraron agentes</p>
+              )}
+            </div>
+
+            <div className="mt-3 border-t pt-3 text-xs" style={{ borderColor: "#e5e5e5", color: "#9ca3af" }}>
+              Mostrando {agentes.filter(a => a.id !== Number(authUserId))
+                .filter(a => !busquedaAgente || a.nombre.toLowerCase().includes(busquedaAgente.toLowerCase()))
+                .filter(a => !filtroAgencia || a.agencia_nombre === filtroAgencia).length} de {agentes.length - 1} agentes disponibles
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Dialogo de cierre */}
       {mostrarCerrar && (
