@@ -31,7 +31,9 @@ export default async function InboxPage({
 
   let sql = `SELECT c.id, c.plataforma, c.contacto_externo_id, c.estado,
                     c.ad_id, c.creado, c.actualizado,
-                    u.nombre AS asignado_nombre, '' AS ultimo_mensaje, 0 AS msgs_no_leidos
+                    u.nombre AS asignado_nombre,
+                    (SELECT TOP 1 contenido FROM lg_mensajes WHERE conversacion_id = c.id ORDER BY recibido DESC) AS ultimo_mensaje,
+                    (SELECT COUNT(*) FROM lg_mensajes WHERE conversacion_id = c.id AND role IN ('cliente','bot')) AS msgs_no_leidos
              FROM lg_conversaciones c
              LEFT JOIN lg_usuarios u ON u.id = c.asignado_a
              WHERE c.agencia_id = @agenciaId`;
@@ -80,24 +82,45 @@ export default async function InboxPage({
       </div>
 
       <div className="space-y-2">
-        {conversaciones.map((c) => (
-          <Link
-            key={c.id}
-            href={`/app/inbox/${c.id}`}
-            className="flex items-center justify-between rounded-lg border bg-white p-4 hover:shadow-sm"
-          >
-            <div>
-              <p className="font-medium">{c.contacto_externo_id}</p>
-              <p className="text-xs text-gray-500">
-                {c.plataforma} · {c.estado.replace("_", " ")}
-                {c.asignado_nombre && ` · ${c.asignado_nombre}`}
-              </p>
-            </div>
-            <div className="text-right text-xs text-gray-400">
-              {new Date(c.actualizado).toLocaleDateString("es-GT")}
-            </div>
-          </Link>
-        ))}
+        {conversaciones.map((c) => {
+          let preview = "";
+          try {
+            const parsed = JSON.parse(c.ultimo_mensaje ?? "{}");
+            preview = parsed.text ?? parsed.image_caption ?? parsed.interactive_reply?.title ?? "";
+          } catch {}
+          return (
+            <Link
+              key={c.id}
+              href={`/app/inbox/${c.id}`}
+              className="flex items-center justify-between rounded-lg border bg-white p-4 hover:shadow-sm"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate font-medium">{c.contacto_externo_id}</p>
+                  {c.msgs_no_leidos > 0 && (
+                    <span className="inline-flex size-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
+                      {c.msgs_no_leidos}
+                    </span>
+                  )}
+                </div>
+                <p className="truncate text-sm text-gray-500">
+                  {preview || "..."}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {c.plataforma}
+                  {c.estado !== "auto_respondiendo" && ` · ${c.estado.replace("_", " ")}`}
+                  {c.asignado_nombre && ` · ${c.asignado_nombre}`}
+                </p>
+              </div>
+              <div className="ml-4 shrink-0 text-right text-xs text-gray-400">
+                {new Date(c.actualizado).toLocaleDateString("es-GT", {
+                  day: "2-digit", month: "2-digit",
+                  hour: "2-digit", minute: "2-digit",
+                })}
+              </div>
+            </Link>
+          );
+        })}
 
         {conversaciones.length === 0 && (
           <p className="py-8 text-center text-gray-400">
