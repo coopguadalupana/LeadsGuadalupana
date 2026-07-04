@@ -62,7 +62,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect() {
-      return "/app/inbox";
+      return `${process.env.NEXTAUTH_URL}/app/inbox`;
     },
   },
   pages: {

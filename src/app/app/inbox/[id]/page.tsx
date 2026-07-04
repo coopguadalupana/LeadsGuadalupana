@@ -31,6 +31,8 @@ export default function ChatPage({
   const [texto, setTexto] = useState("");
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
+  const [subiendoImg, setSubiendoImg] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
 
@@ -69,6 +71,26 @@ export default function ChatPage({
     }
   }
 
+  async function sendMedia() {
+    const file = fileInput.current?.files?.[0];
+    if (!file || subiendoImg) return;
+    setSubiendoImg(true);
+    try {
+      const formData = new FormData();
+      formData.append("media", file);
+      const res = await fetch(`/leads/api/conversations/${id}/send`, {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        if (fileInput.current) fileInput.current.value = "";
+        await fetchConv();
+      }
+    } finally {
+      setSubiendoImg(false);
+    }
+  }
+
   if (loading) return <p className="p-6" style={{ color: "#6b7280" }}>Cargando...</p>;
   if (!conv) return <p className="p-6" style={{ color: "#6b7280" }}>Conversacion no encontrada</p>;
 
@@ -90,7 +112,7 @@ export default function ChatPage({
 
       <div className="flex-1 space-y-3 overflow-y-auto py-4">
         {conv.mensajes.map((msg) => {
-          const contenido =
+          const c =
             typeof msg.contenido === "string"
               ? JSON.parse(msg.contenido)
               : msg.contenido;
@@ -116,14 +138,46 @@ export default function ChatPage({
                       : { background: "#cf2e2e" }
                 }
               >
-                {msg.tipo === "imagen" && contenido.image_caption ? (
+                {msg.tipo === "imagen" && c.image_id ? (
                   <>
-                    <p className="mb-1 text-xs opacity-60">📷 Imagen</p>
-                    <p>{contenido.image_caption}</p>
+                    <img
+                      src={`/leads/api/media/${c.image_id}`}
+                      alt={c.image_caption ?? "Imagen"}
+                      className="max-w-full rounded-lg"
+                      loading="lazy"
+                    />
+                    {c.image_caption && (
+                      <p className="mt-1 text-sm" style={{ color: msg.role === "agente" ? "#fff" : "#464646" }}>
+                        {c.image_caption}
+                      </p>
+                    )}
                   </>
+                ) : msg.tipo === "imagen" ? (
+                  <p className="italic opacity-60">📷 Imagen</p>
+                ) : msg.tipo === "video" && c.video_id ? (
+                  <video
+                    controls
+                    className="max-w-full rounded-lg"
+                    preload="metadata"
+                  >
+                    <source src={`/leads/api/media/${c.video_id}`} type={c.video_mime_type ?? "video/mp4"} />
+                  </video>
+                ) : msg.tipo === "audio" && c.audio_id ? (
+                  <audio controls className="max-w-full">
+                    <source src={`/leads/api/media/${c.audio_id}`} type={c.audio_mime_type ?? "audio/ogg"} />
+                  </audio>
+                ) : msg.tipo === "documento" && c.document_id ? (
+                  <a
+                    href={`/leads/api/media/${c.document_id}`}
+                    target="_blank"
+                    className="flex items-center gap-2 underline"
+                    style={{ color: msg.role === "agente" ? "#fff" : "#0e5bb0" }}
+                  >
+                    📎 {c.document_filename ?? "Documento"}
+                  </a>
                 ) : (
                   <p style={{ color: msg.role === "agente" ? "#ffffff" : "#464646" }}>
-                    {contenido.text ?? contenido.body ?? "(media)"}
+                    {c.text ?? c.body ?? "(media)"}
                   </p>
                 )}
                 <p className="mt-1 text-right text-xs opacity-60" style={{ color: msg.role === "agente" ? "rgba(255,255,255,0.7)" : "#9ca3af" }}>
@@ -136,25 +190,50 @@ export default function ChatPage({
         <div ref={msgEnd} />
       </div>
 
-      <div className="flex gap-2 border-t pt-4" style={{ borderColor: "#e5e5e5" }}>
+      <div className="flex flex-col gap-2 border-t pt-4" style={{ borderColor: "#e5e5e5" }}>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+            placeholder="Escribir mensaje..."
+            className="flex-1 rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
+            disabled={enviando || subiendoImg}
+          />
+          <button
+            onClick={() => fileInput.current?.click()}
+            disabled={subiendoImg}
+            className="rounded-xl px-3 py-2.5 text-sm transition-opacity disabled:opacity-50"
+            style={{ background: "#f0f0f0", color: "#464646" }}
+            title="Adjuntar imagen"
+          >
+            📎
+          </button>
+          <button
+            onClick={sendMessage}
+            disabled={enviando || !texto.trim() || subiendoImg}
+            className="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+            style={{ background: "#cf2e2e" }}
+          >
+            {enviando ? "Enviando..." : "Enviar"}
+          </button>
+        </div>
         <input
-          type="text"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-          placeholder="Escribir mensaje..."
-          className="flex-1 rounded-xl border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-          style={{ borderColor: "#e5e5e5", color: "#464646" }}
-          disabled={enviando}
+          ref={fileInput}
+          type="file"
+          accept="image/*,video/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              setTexto(file.name);
+              sendMedia();
+            }
+          }}
         />
-        <button
-          onClick={sendMessage}
-          disabled={enviando || !texto.trim()}
-          className="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-opacity disabled:opacity-50"
-          style={{ background: "#cf2e2e" }}
-        >
-          {enviando ? "Enviando..." : "Enviar"}
-        </button>
+        {subiendoImg && <p className="text-xs" style={{ color: "#6b7280" }}>Subiendo archivo...</p>}
       </div>
     </div>
   );

@@ -63,6 +63,15 @@ export interface ParsedMessage {
   type: string;
   text?: string;
   image_caption?: string;
+  image_id?: string;
+  image_mime_type?: string;
+  video_id?: string;
+  video_caption?: string;
+  video_mime_type?: string;
+  document_id?: string;
+  document_filename?: string;
+  document_mime_type?: string;
+  audio_id?: string;
   interactive_reply?: { id: string; title: string };
   location?: { latitude: number; longitude: number };
   ad_id?: string;
@@ -111,6 +120,15 @@ export function parsePayload(body: WebhookPayload): {
           type: msg.type,
           text: msg.text?.body,
           image_caption: msg.image?.caption,
+          image_id: msg.image?.id,
+          image_mime_type: msg.image?.mime_type,
+          video_id: msg.video?.id,
+          video_caption: msg.video?.caption,
+          video_mime_type: msg.video?.mime_type,
+          document_id: msg.document?.id,
+          document_filename: msg.document?.filename,
+          document_mime_type: msg.document?.mime_type,
+          audio_id: msg.audio?.id,
           interactive_reply:
             msg.interactive?.button_reply ??
             msg.interactive?.list_reply,
