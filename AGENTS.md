@@ -137,6 +137,17 @@ npm run lint       # ESLint
 npm run typecheck  # TypeScript estricto
 ```
 
+## Estado del frontend
+
+| Página     | Componente | Fuente datos | Refresh | Acciones |
+| ---------- | ---------- | ------------ | ------- | -------- |
+| `/app/inbox` | Client     | API `/api/conversations` | Polling 10s | Filtros, badge no leídos, preview mensaje |
+| `/app/inbox/[id]` | Client | API `/api/conversations/[id]` | Polling 5s | Enviar texto, scroll automático |
+| `/app/leads` | Client | API `/api/leads` | Polling 10s | Cambiar calificación inline |
+| `/app/flows` | Client | API `/api/flows` | Manual | Crear/editar/eliminar/toggle |
+| `/app/ads` | Client | API `/api/ads/performance` | Manual | Filtros |
+| `/app/config` | Client | API `/api/agency/config` | Manual | Guardar JSON (solo admin) |
+
 ## Conventions
 
 - TypeScript strict mode.
