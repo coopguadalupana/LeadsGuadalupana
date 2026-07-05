@@ -6,6 +6,7 @@ export interface SessionUser {
   id: string;
   agencia_id: number;
   rol: string;
+  rol_id: number;
   name?: string | null;
 }
 
@@ -24,10 +25,10 @@ export async function getAuthSession(): Promise<{
 
   const user = session.user as unknown as SessionUser;
 
-  if (!user.agencia_id) {
+  if (!user.agencia_id || !user.rol_id) {
     return {
       user: null,
-      response: NextResponse.json({ error: "Agencia no encontrada" }, { status: 403 }),
+      response: NextResponse.json({ error: "Agencia o rol no encontrado" }, { status: 403 }),
     };
   }
 

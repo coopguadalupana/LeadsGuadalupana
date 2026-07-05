@@ -11,7 +11,7 @@ export async function GET() {
     let sql: string;
     const params: Record<string, unknown> = {};
 
-    if (canViewAllConversations(auth.user.rol)) {
+    if (await canViewAllConversations(auth.user.rol_id)) {
       sql = `SELECT f.id, f.agencia_id, f.nombre, f.activo, f.[trigger], f.pasos, f.version, f.creado, f.actualizado,
                     a.nombre AS agencia_nombre
              FROM lg_flows f
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await getAuthSession();
     if (!auth.user) return auth.response;
-    if (!canManageFlows(auth.user.rol)) {
+    if (!await canManageFlows(auth.user.rol_id)) {
       return NextResponse.json({ error: "No tienes permiso para crear flujos" }, { status: 403 });
     }
 

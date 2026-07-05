@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
   const params: Record<string, unknown> = {};
 
-  if (canViewAllConversations(auth.user.rol)) {
+  if (await canViewAllConversations(auth.user.rol_id)) {
     if (agenciaFiltro) {
       sql += ` WHERE c.agencia_id = @agenciaId`;
       params.agenciaId = Number(agenciaFiltro);

@@ -25,10 +25,11 @@ export const authOptions: NextAuthOptions = {
           id: number;
           agencia_id: number;
           rol: string;
+          rol_id: number;
           nombre: string;
           activo: boolean;
         }>(
-          `SELECT u.id, u.agencia_id, u.rol, u.nombre, u.activo
+          `SELECT u.id, u.agencia_id, u.rol, u.rol_id, u.nombre, u.activo
            FROM lg_usuarios u
            JOIN lg_agencias a ON a.id = u.agencia_id
            WHERE (u.ldap_sam = @sam OR u.ldap_sam = @upn)`,
@@ -44,6 +45,7 @@ export const authOptions: NextAuthOptions = {
           email: ldapUser.mail ?? null,
           agencia_id: usuarios[0]!.agencia_id,
           rol: usuarios[0]!.rol,
+          rol_id: usuarios[0]!.rol_id,
         };
       },
     }),
@@ -53,36 +55,37 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.agencia_id = user.agencia_id;
         token.rol = user.rol;
+        token.rol_id = user.rol_id;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        // Fetch fresh user data from DB on every session check
         try {
           const userData = await query<{
             id: number;
             agencia_id: number;
             rol: string;
+            rol_id: number;
             activo: boolean;
           }>(
-            `SELECT id, agencia_id, rol, activo FROM lg_usuarios WHERE id = @id`,
+            `SELECT id, agencia_id, rol, rol_id, activo FROM lg_usuarios WHERE id = @id`,
             { id: Number(token.sub) }
           );
 
           if (userData.length === 0 || !userData[0]!.activo) {
-            // User deleted or deactivated → invalidate session
             return { ...session, expires: new Date(0).toISOString() };
           }
 
           session.user.id = token.sub!;
           session.user.agencia_id = userData[0]!.agencia_id;
           session.user.rol = userData[0]!.rol;
+          session.user.rol_id = userData[0]!.rol_id;
         } catch {
-          // If DB fails, fall back to token data
           session.user.id = token.sub!;
           session.user.agencia_id = token.agencia_id;
           session.user.rol = token.rol;
+          session.user.rol_id = token.rol_id;
         }
       }
       return session;

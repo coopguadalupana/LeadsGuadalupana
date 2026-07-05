@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
-  if (!canManageFlows(auth.user.rol)) {
+  if (!await canManageFlows(auth.user.rol_id)) {
     return NextResponse.json({ error: "No tienes permiso para editar flujos" }, { status: 403 });
   }
 
@@ -44,7 +44,7 @@ export async function DELETE(
 ) {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
-  if (!canManageFlows(auth.user.rol)) {
+  if (!await canManageFlows(auth.user.rol_id)) {
     return NextResponse.json({ error: "No tienes permiso para eliminar flujos" }, { status: 403 });
   }
 

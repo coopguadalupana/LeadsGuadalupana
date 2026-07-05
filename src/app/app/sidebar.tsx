@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { canManageFlows, canManageUsers } from "@/lib/auth/permissions";
+import { canManageFlowsSync, canManageUsersSync } from "@/lib/auth/permissions-client";
 
 export default function Sidebar({
   userName,
@@ -17,11 +17,10 @@ export default function Sidebar({
   const navItems = [
     { href: "/app/inbox", label: "Inbox", icon: "💬", show: true },
     { href: "/app/leads", label: "Leads", icon: "👤", show: true },
-    { href: "/app/flows", label: "Flujos", icon: "⚙️", show: canManageFlows(rol) },
-    { href: "/app/ads", label: "Rendimiento", icon: "📊", show: true },
-    { href: "/app/ads-config", label: "Anuncios", icon: "📢", show: canManageUsers(rol) },
-    { href: "/app/usuarios", label: "Usuarios", icon: "👥", show: canManageUsers(rol) },
-    { href: "/app/config", label: "Config", icon: "🔧", show: canManageUsers(rol) },
+    { href: "/app/flows", label: "Flujos", icon: "⚙️", show: canManageFlowsSync(rol) },
+    { href: "/app/ads-config", label: "Anuncios", icon: "📢", show: canManageUsersSync(rol) },
+    { href: "/app/usuarios", label: "Usuarios", icon: "👥", show: canManageUsersSync(rol) },
+    { href: "/app/config", label: "Config", icon: "🔧", show: canManageUsersSync(rol) },
   ];
 
   return (

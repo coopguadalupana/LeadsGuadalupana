@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   let sql: string;
   const params: Record<string, unknown> = {};
 
-  const viewAll = canViewAllConversations(auth.user.rol);
+  const viewAll = await canViewAllConversations(auth.user.rol_id);
 
   if (q) {
     sql = `SELECT c.*, a.nombre AS agencia_nombre

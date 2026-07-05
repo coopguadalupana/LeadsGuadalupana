@@ -9,7 +9,7 @@ export async function DELETE(
 ) {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
-  if (!canManageUsers(auth.user.rol)) {
+  if (!await canManageUsers(auth.user.rol_id)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 

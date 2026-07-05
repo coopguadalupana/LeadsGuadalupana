@@ -7,7 +7,7 @@ export async function GET() {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
 
-  if (canViewAllConversations(auth.user.rol)) {
+  if (await canViewAllConversations(auth.user.rol_id)) {
     const users = await query(
       `SELECT u.id, u.ldap_sam, u.nombre, u.email, u.rol, u.agencia_id, u.activo, u.ultimo_sync,
               a.nombre AS agencia_nombre
@@ -33,7 +33,7 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
-  if (!canManageUsers(auth.user.rol)) {
+  if (!await canManageUsers(auth.user.rol_id)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest) {
   const params: Record<string, unknown> = { id: Number(id) };
 
   if (rol !== undefined) {
-    if (!canManageUsers(auth.user.rol)) {
+    if (!await canManageUsers(auth.user.rol_id)) {
       return NextResponse.json({ error: "No puedes cambiar roles" }, { status: 403 });
     }
     updates.push("rol = @rol");
@@ -70,7 +70,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (agencia_id !== undefined) {
-    if (!canViewAllConversations(auth.user.rol)) {
+    if (!canViewAllConversations(auth.user.rol_id)) {
       return NextResponse.json({ error: "No puedes cambiar agencia" }, { status: 403 });
     }
     // Unassign conversations when changing agency

@@ -8,7 +8,7 @@ export async function GET() {
   if (!auth.user) return auth.response;
 
   // Supervisors+ can see all agents; agents only see their own agency
-  if (canViewAllConversations(auth.user.rol)) {
+  if (await canViewAllConversations(auth.user.rol_id)) {
     const agentes = await query<{ id: number; nombre: string; rol: string; agencia_id: number }>(
       `SELECT u.id, u.nombre, u.rol, u.agencia_id, a.nombre AS agencia_nombre
        FROM lg_usuarios u

@@ -7,7 +7,7 @@ export async function GET() {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
 
-  if (canViewAllConversations(auth.user.rol)) {
+  if (await canViewAllConversations(auth.user.rol_id)) {
     const ads = await query(
       `SELECT a.ad_id, a.campaign_id, a.campaign_name, a.ad_name, a.agency_id, a.es_manual, a.ultima_actualizacion,
               ag.nombre AS agencia_nombre
@@ -33,7 +33,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await getAuthSession();
   if (!auth.user) return auth.response;
-  if (!canManageUsers(auth.user.rol)) {
+  if (!await canManageUsers(auth.user.rol_id)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 

@@ -15,7 +15,7 @@ export async function GET(
   let sql: string;
   let sqlParams: Record<string, unknown>;
 
-  if (canViewAllConversations(auth.user.rol)) {
+  if (await canViewAllConversations(auth.user.rol_id)) {
     sql = `SELECT c.id, c.agencia_id, c.plataforma, c.contacto_externo_id, c.estado,
                   c.ad_id, c.campaign_id, c.asignado_a, c.creado, a.nombre AS agencia_nombre
            FROM lg_conversaciones c
@@ -72,7 +72,7 @@ export async function PATCH(
   const isOwnAgency = conv.agencia_id === auth.user.agencia_id;
 
   // Agents can only update their own agency conversations
-  if (!canViewAllConversations(auth.user.rol) && !isOwnAgency) {
+  if (!canViewAllConversations(auth.user.rol_id) && !isOwnAgency) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
@@ -89,7 +89,7 @@ export async function PATCH(
   }
 
   if (body.agencia_id !== undefined) {
-    if (!canChangeConversationAgency(auth.user.rol)) {
+    if (!await canChangeConversationAgency(auth.user.rol_id)) {
       return NextResponse.json({ error: "No tienes permiso para cambiar la agencia" }, { status: 403 });
     }
     updates.push("agencia_id = @nuevaAgencia");
