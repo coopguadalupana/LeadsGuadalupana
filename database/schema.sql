@@ -35,6 +35,8 @@ CREATE TABLE lg_usuarios (
     CONSTRAINT UQ_lg_usuarios_ldap_sam UNIQUE (ldap_sam)
 );
 
+CREATE INDEX IX_lg_usuarios_agencia ON lg_usuarios(agencia_id, nombre);
+
 -- Tabla: conversaciones
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_conversaciones' AND xtype='U')
 CREATE TABLE lg_conversaciones (
@@ -57,6 +59,8 @@ CREATE TABLE lg_conversaciones (
 
 CREATE INDEX IX_lg_conversaciones_agencia ON lg_conversaciones(agencia_id, estado);
 CREATE UNIQUE NONCLUSTERED INDEX IX_lg_conversaciones_activa ON lg_conversaciones(agencia_id, contacto_externo_id) WHERE estado != 'cerrada';
+CREATE INDEX IX_lg_conversaciones_actualizado ON lg_conversaciones(agencia_id, actualizado DESC) WHERE estado != 'cerrada';
+CREATE INDEX IX_lg_conversaciones_asignado ON lg_conversaciones(agencia_id, asignado_a) WHERE asignado_a IS NOT NULL;
 
 -- Tabla: mensajes
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_mensajes' AND xtype='U')
@@ -65,7 +69,7 @@ CREATE TABLE lg_mensajes (
     conversacion_id INT             NOT NULL REFERENCES lg_conversaciones(id),
     message_id      NVARCHAR(100)   NULL, -- ID de Meta (para idempotencia)
     [role]          NVARCHAR(10)    NOT NULL CHECK ([role] IN ('cliente','agente','bot')),
-    tipo            NVARCHAR(20)    NOT NULL CHECK (tipo IN ('texto','imagen','audio','video','documento','template','interactivo','ubicacion','contacto','sticker','desconocido')),
+    tipo            NVARCHAR(20)    NOT NULL, -- gobernado por lg_tipos_mensaje
     contenido       NVARCHAR(MAX)   NOT NULL, -- JSON: texto, URLs, caption, etc.
     metadata        NVARCHAR(MAX)   NULL, -- JSON: ad_id, campaign_id, platform_data
     recibido        DATETIME2       NOT NULL DEFAULT SYSUTCDATETIME(),
@@ -74,6 +78,7 @@ CREATE TABLE lg_mensajes (
 );
 
 CREATE INDEX IX_lg_mensajes_conversacion ON lg_mensajes(conversacion_id, recibido);
+CREATE INDEX IX_lg_mensajes_no_leidos ON lg_mensajes(conversacion_id, role, recibido);
 
 -- Tabla: tipos de mensaje (mapeo WhatsApp -> interno)
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_tipos_mensaje' AND xtype='U')
@@ -106,7 +111,7 @@ CREATE TABLE lg_leads (
     nombre          NVARCHAR(200)   NULL,
     telefono        NVARCHAR(50)    NULL,
     email           NVARCHAR(200)   NULL,
-    calificacion    NVARCHAR(10)    NULL CHECK (calificacion IN ('hot','warm','cold')),
+    calificacion    NVARCHAR(10)    NULL, -- gobernado por lg_calificaciones
     notas           NVARCHAR(MAX)   NULL,
     asignado_a      INT             NULL REFERENCES lg_usuarios(id),
     creado          DATETIME2       NOT NULL DEFAULT GETDATE(),
@@ -114,6 +119,7 @@ CREATE TABLE lg_leads (
 );
 
 CREATE INDEX IX_lg_leads_agencia ON lg_leads(agencia_id, calificacion);
+CREATE INDEX IX_lg_leads_conversacion ON lg_leads(conversacion_id);
 
 -- Tabla: flows de auto-respuesta
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_flows' AND xtype='U')
