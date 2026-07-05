@@ -18,7 +18,8 @@ export default function Sidebar({
     { href: "/app/inbox", label: "Inbox", icon: "💬", show: true },
     { href: "/app/leads", label: "Leads", icon: "👤", show: true },
     { href: "/app/flows", label: "Flujos", icon: "⚙️", show: canManageFlows(rol) },
-    { href: "/app/ads", label: "Anuncios", icon: "📊", show: true },
+    { href: "/app/ads", label: "Rendimiento", icon: "📊", show: true },
+    { href: "/app/ads-config", label: "Anuncios", icon: "📢", show: canManageUsers(rol) },
     { href: "/app/usuarios", label: "Usuarios", icon: "👥", show: canManageUsers(rol) },
     { href: "/app/config", label: "Config", icon: "🔧", show: canManageUsers(rol) },
   ];

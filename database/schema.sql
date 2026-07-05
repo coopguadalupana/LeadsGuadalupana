@@ -128,5 +128,6 @@ CREATE TABLE lg_ads_cache (
     campaign_name       NVARCHAR(255)   NULL,
     ad_name             NVARCHAR(255)   NULL,
     agency_id           INT             NULL,
+    es_manual           BIT             NOT NULL DEFAULT 0,
     ultima_actualizacion DATETIME2      NOT NULL DEFAULT GETDATE()
 );
