@@ -23,6 +23,7 @@ export default function AdsConfigPage() {
   const [ads, setAds] = useState<AdMapping[]>([]);
   const [agencias, setAgencias] = useState<Agencia[]>([]);
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [editando, setEditando] = useState<AdMapping | null>(null);
   const [nuevoAdId, setNuevoAdId] = useState("");
   const [nuevaAgenciaId, setNuevaAgenciaId] = useState("");
   const [nuevoCampaignName, setNuevoCampaignName] = useState("");
@@ -40,7 +41,23 @@ export default function AdsConfigPage() {
       .catch(() => {});
   }, []);
 
-  async function agregar() {
+  function abrirModal(ad?: AdMapping) {
+    if (ad) {
+      setEditando(ad);
+      setNuevoAdId(ad.ad_id);
+      setNuevaAgenciaId(String(ad.agency_id ?? ""));
+      setNuevoCampaignName(ad.campaign_name ?? "");
+    } else {
+      setEditando(null);
+      setNuevoAdId("");
+      setNuevaAgenciaId("");
+      setNuevoCampaignName("");
+    }
+    setMostrarModal(true);
+    setError("");
+  }
+
+  async function guardar() {
     if (!nuevoAdId || !nuevaAgenciaId) return;
     setGuardando(true);
     setError("");
@@ -51,9 +68,7 @@ export default function AdsConfigPage() {
         campaign_name: nuevoCampaignName.trim() || null,
       });
       setMostrarModal(false);
-      setNuevoAdId("");
-      setNuevaAgenciaId("");
-      setNuevoCampaignName("");
+      setEditando(null);
       const updated = await apiGet<AdMapping[]>("/agency/ads");
       setAds(updated);
     } catch {
@@ -77,7 +92,7 @@ export default function AdsConfigPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold" style={{ color: "#003160" }}>Anuncios por Agencia</h1>
-        <button onClick={() => setMostrarModal(true)}
+        <button onClick={() => abrirModal()}
           className="rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ background: "#cf2e2e" }}>
           + Agregar anuncio
         </button>
@@ -112,6 +127,9 @@ export default function AdsConfigPage() {
                   {new Date(a.ultima_actualizacion).toLocaleString("es-GT", { timeZone: "America/Guatemala" })}
                 </td>
                 <td className="px-4 py-3">
+                  <button onClick={() => abrirModal(a)} className="mr-2 text-xs" style={{ color: "#0e5bb0" }}>
+                    Editar
+                  </button>
                   {a.es_manual && (
                     <button onClick={() => eliminar(a.ad_id)} className="text-xs text-red-500 hover:text-red-700">
                       Eliminar
@@ -131,7 +149,7 @@ export default function AdsConfigPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold" style={{ color: "#003160" }}>Agregar anuncio</h3>
+              <h3 className="text-lg font-bold" style={{ color: "#003160" }}>{editando ? "Editar anuncio" : "Agregar anuncio"}</h3>
               <button onClick={() => setMostrarModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
             <div className="mb-3">
@@ -157,10 +175,10 @@ export default function AdsConfigPage() {
                 className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
                 style={{ borderColor: "#e5e5e5", color: "#464646" }} placeholder="ej: Campana Meta Ads" />
             </div>
-            <button onClick={agregar} disabled={guardando || !nuevoAdId || !nuevaAgenciaId}
+            <button onClick={guardar} disabled={guardando || !nuevoAdId || !nuevaAgenciaId}
               className="w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
               style={{ background: "#cf2e2e" }}>
-              {guardando ? "Guardando..." : "Agregar"}
+              {guardando ? "Guardando..." : editando ? "Actualizar" : "Agregar"}
             </button>
           </div>
         </div>
