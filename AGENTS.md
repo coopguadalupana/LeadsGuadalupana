@@ -165,7 +165,9 @@ npm run typecheck  # TypeScript estricto
 | `admin` | Asignar roles a usuarios, gestionar config |
 | `superadmin` | Acceso total a todo |
 
-Validación via `src/lib/auth/permissions.ts` — funciones `canViewAllConversations()`, `canManageFlows()`, `canAssignRoles()`, etc.
+Validación via `src/lib/auth/permissions.ts` (BD con caché en memoria) y `permissions-client.ts` (sincrono para frontend).
+
+Tablas: `lg_roles` (jerarquía), `lg_permisos` (catálogo), `lg_roles_permisos` (asignación).
 
 ## Conventions
 
