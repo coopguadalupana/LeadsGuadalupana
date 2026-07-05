@@ -66,29 +66,32 @@ export async function POST() {
   // 2. Get all existing users + agencies in bulk
   const [existingUsers, agencias] = await Promise.all([
     query<{ id: number; ldap_sam: string }>("SELECT id, ldap_sam FROM lg_usuarios"),
-    query<{ id: number; subou_ldap: string }>("SELECT id, subou_ldap FROM lg_agencias WHERE activa = 1"),
+    query<{ id: number; subou_ldap: string; rol_default_sync: string }>(
+      "SELECT id, subou_ldap, COALESCE(rol_default_sync, 'agent') as rol_default_sync FROM lg_agencias WHERE activa = 1"
+    ),
   ]);
 
   const existingMap = new Map(existingUsers.map((u) => [u.ldap_sam, u.id]));
-  const agenciaMap = new Map(agencias.map((a) => [a.subou_ldap, a.id]));
+  const agenciaMap = new Map(agencias.map((a) => [a.subou_ldap, a]));
+  const defaultRol = new Map(agencias.map((a) => [a.id, a.rol_default_sync]));
 
   let creados = 0;
   let actualizados = 0;
 
   // 3. Process in bulk: collect updates and inserts
   const updates: Array<{ id: number; nombre: string; mail: string }> = [];
-  const inserts: Array<{ sam: string; nombre: string; mail: string; agenciaId: number }> = [];
+  const inserts: Array<{ sam: string; nombre: string; mail: string; agenciaId: number; rol: string }> = [];
 
   for (const u of usuariosLDAP) {
     if (!u.sam) continue;
-    const agenciaId = agenciaMap.get(u.ou);
-    if (!agenciaId) continue;
+    const a = agenciaMap.get(u.ou);
+    if (!a) continue;
 
     const existingId = existingMap.get(u.sam);
     if (existingId !== undefined) {
       updates.push({ id: existingId, nombre: u.nombre, mail: u.mail });
     } else {
-      inserts.push({ sam: u.sam, nombre: u.nombre, mail: u.mail, agenciaId });
+      inserts.push({ sam: u.sam, nombre: u.nombre, mail: u.mail, agenciaId: a.id, rol: a.rol_default_sync });
     }
   }
 
@@ -113,8 +116,8 @@ export async function POST() {
     insertBatches.push(Promise.all(batch.map((u) =>
       execute(
         `INSERT INTO lg_usuarios (ldap_sam, nombre, email, agencia_id, rol, activo, ultimo_sync)
-         VALUES (@sam, @nombre, @mail, @agenciaId, 'agent', 1, GETUTCDATE())`,
-        { sam: u.sam, nombre: u.nombre, mail: u.mail ?? null, agenciaId: u.agenciaId }
+         VALUES (@sam, @nombre, @mail, @agenciaId, @rol, 1, GETUTCDATE())`,
+        { sam: u.sam, nombre: u.nombre, mail: u.mail ?? null, agenciaId: u.agenciaId, rol: u.rol }
       )
     )));
   }

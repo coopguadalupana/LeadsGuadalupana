@@ -17,11 +17,12 @@ interface Lead {
   creado: string;
 }
 
-const BADGE_COLORS: Record<string, { bg: string; text: string }> = {
-  hot: { bg: "#fce4ec", text: "#c62828" },
-  warm: { bg: "#fff8e1", text: "#f57f17" },
-  cold: { bg: "#f5f5f5", text: "#757575" },
-};
+interface Calificacion {
+  nombre: string;
+  color_fondo: string;
+  color_texto: string;
+  orden: number;
+}
 
 export default function LeadsPage() {
   const router = useRouter();
@@ -30,6 +31,17 @@ export default function LeadsPage() {
   const activeRef = useRef(true);
 
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
+
+  useEffect(() => {
+    apiGet<Calificacion[]>("/leads/calificaciones")
+      .then(setCalificaciones)
+      .catch(() => setCalificaciones([
+        { nombre: "hot", color_fondo: "#fce4ec", color_texto: "#c62828", orden: 0 },
+        { nombre: "warm", color_fondo: "#fff8e1", color_texto: "#f57f17", orden: 1 },
+        { nombre: "cold", color_fondo: "#f5f5f5", color_texto: "#757575", orden: 2 },
+      ]));
+  }, []);
 
   useEffect(() => {
     activeRef.current = true;
@@ -104,7 +116,7 @@ export default function LeadsPage() {
           </thead>
           <tbody>
             {leads.map((l) => {
-              const badge = BADGE_COLORS[l.calificacion ?? ""] ?? { bg: "#f5f5f5", text: "#757575" };
+              const cal = calificaciones.find(c => c.nombre === l.calificacion);
               return (
                 <tr key={l.id} className="border-b transition-colors hover:bg-gray-50" style={{ borderColor: "#f0f0f0" }}>
                   <td className="px-4 py-3 font-medium">
@@ -123,11 +135,9 @@ export default function LeadsPage() {
                       onChange={(e) => cambiarCalificacion(l.id, e.target.value)}
                       className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none"
                       aria-label="Cambiar calificacion"
-                      style={{ background: badge.bg, color: badge.text, border: "none" }}
+                      style={{ background: cal?.color_fondo ?? "#f5f5f5", color: cal?.color_texto ?? "#757575", border: "none" }}
                     >
-                      <option value="hot">Hot</option>
-                      <option value="warm">Warm</option>
-                      <option value="cold">Cold</option>
+                      {calificaciones.map(c => <option key={c.nombre} value={c.nombre}>{c.nombre}</option>)}
                     </select>
                   </td>
                   <td className="px-4 py-3" style={{ color: "#6b7280" }}>{l.asignado_nombre ?? "-"}</td>

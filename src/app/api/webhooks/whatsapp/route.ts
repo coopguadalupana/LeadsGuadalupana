@@ -168,22 +168,10 @@ export async function POST(req: NextRequest) {
         type: msg.type,
       });
 
-      const tipoMap: Record<string, string> = {
-        text: "texto",
-        image: "imagen",
-        audio: "audio",
-        video: "video",
-        document: "documento",
-        interactive: "interactivo",
-        location: "ubicacion",
-        contacts: "contacto",
-        sticker: "sticker",
-        button: "interactivo",
-        list: "interactivo",
-        order: "desconocido",
-        system: "desconocido",
-      };
-      const tipo = tipoMap[msg.type] ?? "desconocido";
+      const tipo = (await query<{ tipo_interno: string }>(
+        "SELECT tipo_interno FROM lg_tipos_mensaje WHERE tipo_externo = @tipo AND activo = 1",
+        { tipo: msg.type }
+      ))[0]?.tipo_interno ?? "desconocido";
 
       await execute(
         `INSERT INTO lg_mensajes (conversacion_id, message_id, role, tipo, contenido, metadata)

@@ -11,6 +11,10 @@ CREATE TABLE lg_agencias (
     subou_ldap      NVARCHAR(100)   NOT NULL,
     config          NVARCHAR(MAX)   NULL, -- JSON: horarios, mensajes default, etc.
     activa          BIT             NOT NULL DEFAULT 1,
+    zona_horaria    NVARCHAR(50)    NULL DEFAULT 'America/Guatemala',
+    idioma_plantillas NVARCHAR(10)  NULL DEFAULT 'es',
+    estrategia_atribucion NVARCHAR(20) NULL DEFAULT 'like',
+    rol_default_sync NVARCHAR(20)   NULL DEFAULT 'agent',
     creado          DATETIME2       NOT NULL DEFAULT GETDATE(),
     actualizado     DATETIME2       NOT NULL DEFAULT GETDATE()
 );
@@ -70,6 +74,28 @@ CREATE TABLE lg_mensajes (
 );
 
 CREATE INDEX IX_lg_mensajes_conversacion ON lg_mensajes(conversacion_id, recibido);
+
+-- Tabla: tipos de mensaje (mapeo WhatsApp -> interno)
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_tipos_mensaje' AND xtype='U')
+CREATE TABLE lg_tipos_mensaje (
+    id              INT             IDENTITY(1,1) PRIMARY KEY,
+    tipo_externo    NVARCHAR(30)    NOT NULL UNIQUE,
+    tipo_interno    NVARCHAR(20)    NOT NULL,
+    icono           NVARCHAR(10)    NULL,
+    descripcion     NVARCHAR(100)   NULL,
+    activo          BIT             NOT NULL DEFAULT 1
+);
+
+-- Tabla: calificaciones de leads
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_calificaciones' AND xtype='U')
+CREATE TABLE lg_calificaciones (
+    id              INT             IDENTITY(1,1) PRIMARY KEY,
+    nombre          NVARCHAR(20)    NOT NULL UNIQUE,
+    color_fondo     NVARCHAR(20)    NULL,
+    color_texto     NVARCHAR(20)    NULL,
+    orden           INT             NOT NULL DEFAULT 0,
+    activo          BIT             NOT NULL DEFAULT 1
+);
 
 -- Tabla: leads
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_leads' AND xtype='U')
