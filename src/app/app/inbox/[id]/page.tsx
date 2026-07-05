@@ -53,7 +53,8 @@ export default function ChatPage({
   const [mostrarDetalles, setMostrarDetalles] = useState(false);
   const [clienteNombre, setClienteNombre] = useState("");
   const [clienteDpi, setClienteDpi] = useState("");
-  const [clienteTags, setClienteTags] = useState("");
+  const [clienteTagsArray, setClienteTagsArray] = useState<string[]>([]);
+  const [nuevoTag, setNuevoTag] = useState("");
   const [guardandoContacto, setGuardandoContacto] = useState(false);
   const [busquedaMensaje, setBusquedaMensaje] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -91,20 +92,31 @@ export default function ChatPage({
     if (!conv) return;
     setClienteNombre(conv.cliente_nombre ?? "");
     setClienteDpi(conv.cliente_dpi ?? "");
-    setClienteTags(conv.etiquetas ?? "");
+    try { setClienteTagsArray(JSON.parse(conv.etiquetas ?? "[]")); } catch { setClienteTagsArray([]); }
+    setNuevoTag("");
     setMostrarDetalles(true);
+  }
+
+  function agregarTag() {
+    const tag = nuevoTag.trim().toLowerCase();
+    if (!tag || clienteTagsArray.includes(tag)) return;
+    setClienteTagsArray([...clienteTagsArray, tag]);
+    setNuevoTag("");
+  }
+
+  function eliminarTag(tag: string) {
+    setClienteTagsArray(clienteTagsArray.filter(t => t !== tag));
   }
 
   async function guardarContacto() {
     if (!conv || guardandoContacto) return;
     setGuardandoContacto(true);
     try {
-      const tags = clienteTags.split(",").map(t => t.trim()).filter(Boolean);
       await apiPatch("/contacts", {
         telefono: conv.contacto_externo_id,
         nombre: clienteNombre || null,
         dpi: clienteDpi || null,
-        etiquetas: tags.length ? JSON.stringify(tags) : null,
+        etiquetas: clienteTagsArray.length ? JSON.stringify(clienteTagsArray) : null,
       });
       setMostrarDetalles(false);
       await fetchConv();
@@ -366,10 +378,29 @@ export default function ChatPage({
 
             <div className="mb-4">
               <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Etiquetas</label>
-              <input type="text" value={clienteTags} onChange={(e) => setClienteTags(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-                style={{ borderColor: "#e5e5e5", color: "#464646" }} placeholder="vip, credito, seguimiento" />
-              <p className="mt-1 text-xs" style={{ color: "#9ca3af" }}>Separadas por coma</p>
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {clienteTagsArray.map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium"
+                    style={{ background: "#e8f0fe", color: "#0e5bb0" }}>
+                    {tag}
+                    <button onClick={() => eliminarTag(tag)} className="ml-0.5 hover:opacity-70">✕</button>
+                  </span>
+                ))}
+                {clienteTagsArray.length === 0 && (
+                  <span className="text-xs" style={{ color: "#9ca3af" }}>Sin etiquetas</span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input type="text" value={nuevoTag} onChange={(e) => setNuevoTag(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregarTag())}
+                  className="flex-1 rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                  style={{ borderColor: "#e5e5e5", color: "#464646" }} placeholder="Nueva etiqueta..." />
+                <button onClick={agregarTag} disabled={!nuevoTag.trim()}
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                  style={{ background: "#0e5bb0" }}>
+                  + Agregar
+                </button>
+              </div>
             </div>
 
             <button onClick={guardarContacto} disabled={guardandoContacto}
