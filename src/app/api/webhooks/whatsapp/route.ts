@@ -82,11 +82,17 @@ export async function POST(req: NextRequest) {
 
       // Attribution via ad_id
       if (msg.ad_id) {
-        const attribution = await getAdAttribution(msg.ad_id);
-        if (attribution) {
-          adId = attribution.ad_id;
-          campaignId = attribution.campaign_id;
-          if (attribution.agency_id) agenciaId = attribution.agency_id;
+        adId = msg.ad_id;
+        try {
+          const attribution = await getAdAttribution(msg.ad_id);
+          if (attribution) {
+            adId = attribution.ad_id;
+            campaignId = attribution.campaign_id;
+            if (attribution.agency_id) agenciaId = attribution.agency_id;
+          }
+        } catch (e) {
+          console.error(`Ad attribution failed for ${msg.ad_id}:`, e);
+          // Keep the raw ad_id even if attribution fails
         }
       }
 

@@ -56,6 +56,7 @@ interface WhatsAppEntry {
       contacts?: Array<{ profile: { name: string }; wa_id: string }>;
       messages?: WhatsAppMessage[];
       statuses?: WhatsAppStatus[];
+      referral?: { source_url?: string; source_type?: string; source_id?: string; headline?: string; body?: string };
     };
     field: string;
   }>;
@@ -146,7 +147,7 @@ export function parsePayload(body: WebhookPayload): {
           location: msg.location
             ? { latitude: msg.location.latitude, longitude: msg.location.longitude }
             : undefined,
-          ad_id: msg.referral?.source_id ?? msg.context?.referred_product?.catalog_id,
+          ad_id: value.referral?.source_id ?? msg.referral?.source_id ?? msg.context?.referred_product?.catalog_id,
           context_message_id: msg.context?.id,
         };
         messages.push(parsed);
