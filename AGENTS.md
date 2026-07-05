@@ -18,10 +18,14 @@ WhatsApp/Meta Inbox multi-tenant que ingiere mensajes de WhatsApp (Cloud API), l
 
 - `/login` — Autenticación LDAP
 - `/app/inbox` — Bandeja de conversaciones por agencia
+- `/app/inbox/[id]` — Chat individual con contacto
 - `/app/leads` — Leads generados
 - `/app/ads` — Rendimiento de anuncios
+- `/app/ads-config` — Gestión manual de anuncios por agencia (admin+)
 - `/app/flows` — Flujos de auto-respuesta
-- `/app/config` — Configuración de la agencia
+- `/app/flows/[id]` — Editor visual drag & drop de flujos
+- `/app/usuarios` — Gestión de usuarios y roles (admin+)
+- `/app/config` — Configuración de la agencia (admin+)
 
 ## API REST
 
@@ -37,9 +41,22 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 | PATCH  | `/api/conversations/[id]`         | Actualizar estado/asignación       |
 | POST   | `/api/conversations/[id]/send`    | Enviar mensaje (texto, imagen, video) |
 | POST   | `/api/conversations/[id]/read`   | Marcar conversación como leída + read receipt WhatsApp |
-| GET    | `/api/ads`                        | Anuncios con métricas              |
+| GET    | `/api/ads/performance`            | Anuncios con métricas              |
 | GET    | `/api/media/[id]`                  | Proxy de multimedia WhatsApp (imagen, video, audio, doc) |
 | GET    | `/api/agency`                     | Config de la agencia actual        |
+| GET    | `/api/agency/config`              | Config JSON de la agencia          |
+| PATCH  | `/api/agency/config`              | Actualizar config (solo admin)     |
+| GET    | `/api/agency/agents`              | Listar agentes de la agencia       |
+| GET    | `/api/agency/ads`                 | Listar mappings anuncio→agencia    |
+| POST   | `/api/agency/ads`                 | Crear/actualizar mapping manual    |
+| DELETE | `/api/agency/ads/[id]`            | Eliminar mapping manual            |
+| GET    | `/api/agency/roles`               | Listar roles con permisos          |
+| GET    | `/api/agency/users`               | Listar usuarios                    |
+| PATCH  | `/api/agency/users`               | Actualizar rol/activo/agencia      |
+| POST   | `/api/agency/sync-ldap`           | Sincronizar desde LDAP             |
+| GET    | `/api/contacts`                   | Listar contactos con búsqueda      |
+| PATCH  | `/api/contacts`                   | Crear/actualizar contacto (upsert) |
+| GET    | `/api/leads/calificaciones`       | Calificaciones desde BD            |
 | POST   | `/api/flows`                      | Crear flow                         |
 | GET    | `/api/flows`                      | Listar flows                       |
 | PATCH  | `/api/flows/[id]`                 | Actualizar flow                    |
@@ -54,18 +71,27 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 - Idempotencia vía `message_id` + `conversacion_id`
 - Atribución mediante `ad_id` → `getAdAttribution()` → campaña/agencia
 - Captura `image_id`, `video_id`, `audio_id`, `document_id` para proxy multimedia
+- Los tipos de mensaje se resuelven desde `lg_tipos_mensaje` (BD configurable)
 
 ## Base de datos (SQL Server)
 
 Tablas con prefijo `lg_`:
 
-- `lg_agencias` — Agencias financieras multi-tenant
-- `lg_usuarios` — Usuarios mapeados vía LDAP (admin/agent/supervisor)
-- `lg_conversaciones` — Hilos por contacto externo (wa_id), con estado y ad_id
-- `lg_mensajes` — Mensajes individuales con tipo, contenido JSON y metadata
-- `lg_leads` — Leads generados a partir de conversaciones
+- `lg_agencias` — Agencias financieras multi-tenant (con zona_horaria, idioma_plantillas, etc.)
+- `lg_usuarios` — Usuarios mapeados vía LDAP (con rol_id FK a lg_roles)
+- `lg_conversaciones` — Hilos por contacto externo (wa_id), con estado, ad_id, motivo_cierre
+- `lg_mensajes` — Mensajes individuales con tipo (gobernado por lg_tipos_mensaje), contenido JSON
+- `lg_leads` — Leads con calificación (gobernado por lg_calificaciones)
 - `lg_flows` — Flujos de auto-respuesta configurables (JSON triggers + pasos)
-- `lg_ads_cache` — Caché de atribución de anuncios vía Meta Graph API
+- `lg_contactos` — Datos del cliente (nombre, DPI, etiquetas) compartidos entre conversaciones
+- `lg_ads_cache` — Caché de atribución de anuncios (incluye es_manual para entries manuales)
+- `lg_config` — Configuración del sistema (agencia_default, polling, sesión)
+- `lg_estados_transiciones` — Reglas de máquina de estados (origen→evento→destino)
+- `lg_tipos_mensaje` — Mapeo WhatsApp→tipo interno
+- `lg_calificaciones` — Catálogo de calificaciones (hot/warm/cold con colores)
+- `lg_roles` — Roles del sistema (jerarquía)
+- `lg_permisos` — Catálogo de permisos
+- `lg_roles_permisos` — Asignación rol→permiso
 
 Estados de conversación: `en_espera` → `auto_respondiendo` → `en_curso` → `cerrada`
 
@@ -130,6 +156,12 @@ pm2 start ecosystem.config.js
 | `META_PHONE_NUMBER_ID`       | Alias de WHATSAPP_PHONE_ID (documentación) |
 | `META_BUSINESS_ACCOUNT_ID`   | ID del Business Account de Meta         |
 | `NEXT_BASE_PATH`            | basePath de Next.js (default: `/leads`)  |
+| `SQL_ENCRYPT`               | SSL para SQL Server (default: false)     |
+| `SQL_TRUST_SERVER`          | Trust server cert (default: true)        |
+| `SQL_POOL_MAX`              | Pool máximo conexiones (default: 10)     |
+| `SQL_POOL_MIN`              | Pool mínimo conexiones (default: 0)      |
+| `SQL_POOL_IDLE`             | Timeout pool idle (default: 30000)       |
+| `NEXTAUTH_MAX_AGE`          | Sesión max age segundos (default: 30d)   |
 
 ## Developer commands
 
@@ -153,6 +185,8 @@ npm run typecheck  # TypeScript estricto
 | `/app/flows` | Client | API `/api/flows` | Manual | Crear/editar/eliminar/toggle |
 | `/app/flows/[id]` | Client | API `/api/flows` | Manual | Editor visual drag & drop (React Flow) |
 | `/app/ads` | Client | API `/api/ads/performance` | Manual | Filtros |
+| `/app/ads-config` | Client | API `/api/agency/ads` | Manual | Gestionar mappings anuncio→agencia |
+| `/app/usuarios` | Client | API `/api/agency/users` | Manual | Gestionar roles, activo/inactivo, sincronizar LDAP |
 | `/app/config` | Client | API `/api/agency/config` | Manual | Guardar JSON (solo admin) |
 
 ## Roles y permisos
@@ -168,6 +202,22 @@ npm run typecheck  # TypeScript estricto
 Validación via `src/lib/auth/permissions.ts` (BD con caché en memoria) y `permissions-client.ts` (sincrono para frontend).
 
 Tablas: `lg_roles` (jerarquía), `lg_permisos` (catálogo), `lg_roles_permisos` (asignación).
+
+## Máquina de estados
+
+Las transiciones de estado están centralizadas en `lg_estados_transiciones`:
+
+| Origen | Evento | Destino |
+|--------|--------|---------|
+| `en_espera` | `flow_match` | `auto_respondiendo` |
+| `en_espera` | `agent_read` / `agent_send` | `en_curso` |
+| `auto_respondiendo` | `escalate_human` | `en_curso` |
+| `en_curso` | `client_writes` | `en_espera` |
+| `cerrada` | `client_writes` | `en_espera` |
+| `en_curso` / `en_espera` | `agent_close` | `cerrada` |
+| `auto_respondiendo` | `flow_end` | `cerrada` |
+
+La función `transitionState(convId, evento)` en `src/lib/workflow/state-machine.ts` valida y ejecuta la transición centralizadamente.
 
 ## Conventions
 
