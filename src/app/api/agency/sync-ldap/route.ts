@@ -12,7 +12,7 @@ export async function POST() {
 
   const ldap = await import("ldapjs");
   const url = process.env.LDAP_URL;
-  const baseDN = "OU=Gerencia Negocios,DC=guadalupana,DC=com,DC=gt";
+  const baseDN = process.env.LDAP_BASE_DN ?? "OU=Gerencia Negocios,DC=guadalupana,DC=com,DC=gt";
   const serviceUser = process.env.LDAP_SERVICE_USER ?? "";
   const servicePass = process.env.LDAP_SERVICE_PASS ?? "";
 

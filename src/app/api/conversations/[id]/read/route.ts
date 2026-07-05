@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth/session";
 import { query, execute } from "@/lib/db";
+import { transitionState } from "@/lib/workflow/state-machine";
 import { markAsRead } from "@/lib/whatsapp/send";
 
 export async function POST(
@@ -46,11 +47,13 @@ export async function POST(
   }
 
   // Mark conversation as in progress when agent opens it
-  const estadoUpdate = conv.estado === "en_espera" ? ", estado = 'en_curso'" : "";
+  if (conv.estado === "en_espera") {
+    await transitionState(conv.id, "agent_read");
+  }
 
   await execute(
     `UPDATE lg_conversaciones
-     SET leido_por = @userId, ultima_lectura = GETUTCDATE(), actualizado = GETUTCDATE()${estadoUpdate}
+     SET leido_por = @userId, ultima_lectura = GETUTCDATE(), actualizado = GETUTCDATE()
      WHERE id = @id`,
     { userId: Number(auth.user.id), id: conv.id }
   );

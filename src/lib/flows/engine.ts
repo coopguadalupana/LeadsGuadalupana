@@ -1,5 +1,6 @@
 import { sendText, sendTemplate, sendInteractive } from "@/lib/whatsapp/send";
 import { execute } from "@/lib/db";
+import { transitionState } from "@/lib/workflow/state-machine";
 import type { Flow, FlowState } from "@/lib/flows/types";
 
 export async function executeFlow(
@@ -117,11 +118,7 @@ export async function executeFlow(
     }
 
     case "escalate_to_human": {
-      await execute(
-        `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETUTCDATE()
-         WHERE id = @id`,
-        { id: conversacionId }
-      );
+      await transitionState(conversacionId, "escalate_human");
 
       currentState.historial.push({ pasoId: pasoActual.id, accion: "escalate_to_human" });
       finalizado = true;

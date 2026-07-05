@@ -120,6 +120,26 @@ CREATE TABLE lg_contactos (
     CONSTRAINT UQ_lg_contactos_agencia_telefono UNIQUE (agencia_id, telefono)
 );
 
+-- Tabla: configuración del sistema
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_config' AND xtype='U')
+CREATE TABLE lg_config (
+    id              INT             IDENTITY(1,1) PRIMARY KEY,
+    clave           NVARCHAR(100)   NOT NULL UNIQUE,
+    valor           NVARCHAR(500)   NOT NULL,
+    descripcion     NVARCHAR(200)   NULL
+);
+
+-- Tabla: transiciones de estado permitidas
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_estados_transiciones' AND xtype='U')
+CREATE TABLE lg_estados_transiciones (
+    id              INT             IDENTITY(1,1) PRIMARY KEY,
+    estado_origen   NVARCHAR(50)    NOT NULL,
+    estado_destino  NVARCHAR(50)    NOT NULL,
+    evento          NVARCHAR(50)    NOT NULL,
+    descripcion     NVARCHAR(200)   NULL,
+    activo          BIT             NOT NULL DEFAULT 1
+);
+
 -- Tabla: cache de atribucion de anuncios
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_ads_cache' AND xtype='U')
 CREATE TABLE lg_ads_cache (

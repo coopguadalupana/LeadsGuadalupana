@@ -4,6 +4,7 @@ import { parsePayload } from "@/lib/whatsapp/receive";
 import { isDuplicate } from "@/lib/webhook/idempotency";
 import { getAdAttribution } from "@/lib/meta-ads/attribution";
 import { processMessage } from "@/lib/flows/integration";
+import { transitionState } from "@/lib/workflow/state-machine";
 import { query, execute } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
@@ -75,8 +76,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Procesar mensajes entrantes
+    // Leer agencia por defecto desde config
+    const cfg = await query<{ valor: string }>("SELECT valor FROM lg_config WHERE clave = 'agencia_default'");
+    const agenciaDefault = cfg.length > 0 ? Number(cfg[0]!.valor) : 1;
+
     for (const msg of messages) {
-      let agenciaId = 1; // fallback si no se puede atribuir
+      let agenciaId = agenciaDefault;
       let adId: string | null = null;
       let campaignId: string | null = null;
 
@@ -110,11 +115,7 @@ export async function POST(req: NextRequest) {
       if (existing.length > 0) {
         convId = existing[0]!.id;
         if (existing[0]!.estado === "en_curso" || existing[0]!.estado === "cerrada") {
-          await execute(
-            `UPDATE lg_conversaciones SET estado = 'en_espera', actualizado = GETUTCDATE(), motivo_cierre = NULL
-             WHERE id = @id`,
-            { id: convId }
-          );
+          await transitionState(convId, "client_writes");
         }
       } else {
         try {

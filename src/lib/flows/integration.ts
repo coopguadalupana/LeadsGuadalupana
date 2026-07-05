@@ -1,4 +1,5 @@
 import { query, execute } from "@/lib/db";
+import { transitionState } from "@/lib/workflow/state-machine";
 import {
   matchTrigger,
   createInitialState,
@@ -92,7 +93,7 @@ export async function processMessage(
     if (match) {
       console.log("processMessage: flow disparado!", flow.nombre);
       // Cambiar a estado auto_respondiendo
-      await execute(`UPDATE lg_conversaciones SET estado = 'auto_respondiendo', actualizado = GETUTCDATE() WHERE id = @id`, { id: conversacionId });
+      await transitionState(conversacionId, "flow_match");
       currentState = createInitialState(flow);
       const { newState, finalizado } = await executeFlow(
         flow,

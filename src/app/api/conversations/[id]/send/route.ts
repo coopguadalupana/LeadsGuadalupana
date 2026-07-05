@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth/session";
 import { sendText, sendMedia } from "@/lib/whatsapp/send";
 import { execute, query } from "@/lib/db";
+import { transitionState } from "@/lib/workflow/state-machine";
 
 export async function POST(
   req: NextRequest,
@@ -63,11 +64,7 @@ export async function POST(
     );
 
     if (conv.estado === "en_espera") {
-      await execute(
-        `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETUTCDATE()
-         WHERE id = @id`,
-        { id: conv.id }
-      );
+      await transitionState(conv.id, "agent_send");
     }
 
     return NextResponse.json({ success: true });
@@ -95,11 +92,7 @@ export async function POST(
   }
 
   if (conv.estado === "en_espera") {
-    await execute(
-      `UPDATE lg_conversaciones SET estado = 'en_curso', actualizado = GETUTCDATE()
-       WHERE id = @id`,
-      { id: conv.id }
-    );
+    await transitionState(conv.id, "agent_send");
   }
 
   // Return the updated conversation with messages
