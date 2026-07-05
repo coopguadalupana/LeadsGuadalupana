@@ -15,18 +15,25 @@ export async function GET(
   let sql: string;
   let sqlParams: Record<string, unknown>;
 
+  const contactoJoin = `LEFT JOIN lg_contactos ct ON ct.agencia_id = c.agencia_id AND ct.telefono = c.contacto_externo_id`;
+  const contactoFields = `, ct.id AS contacto_id, ct.nombre AS cliente_nombre, ct.dpi AS cliente_dpi, ct.etiquetas`;
+
   if (await canViewAllConversations(auth.user.rol_id)) {
     sql = `SELECT c.id, c.agencia_id, c.plataforma, c.contacto_externo_id, c.estado,
                   c.ad_id, c.campaign_id, c.asignado_a, c.creado, a.nombre AS agencia_nombre
+                  ${contactoFields}
            FROM lg_conversaciones c
            JOIN lg_agencias a ON a.id = c.agencia_id
+           ${contactoJoin}
            WHERE c.id = @id`;
     sqlParams = { id: Number(id) };
   } else {
     sql = `SELECT c.id, c.agencia_id, c.plataforma, c.contacto_externo_id, c.estado,
                   c.ad_id, c.campaign_id, c.asignado_a, c.creado, a.nombre AS agencia_nombre
+                  ${contactoFields}
            FROM lg_conversaciones c
            JOIN lg_agencias a ON a.id = c.agencia_id
+           ${contactoJoin}
            WHERE c.id = @id AND c.agencia_id = @agenciaId`;
     sqlParams = { id: Number(id), agenciaId: auth.user.agencia_id };
   }
