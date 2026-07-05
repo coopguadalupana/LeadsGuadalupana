@@ -26,8 +26,9 @@ export const authOptions: NextAuthOptions = {
           agencia_id: number;
           rol: string;
           nombre: string;
+          activo: boolean;
         }>(
-          `SELECT u.id, u.agencia_id, u.rol, u.nombre
+          `SELECT u.id, u.agencia_id, u.rol, u.nombre, u.activo
            FROM lg_usuarios u
            JOIN lg_agencias a ON a.id = u.agencia_id
            WHERE (u.ldap_sam = @sam OR u.ldap_sam = @upn)`,
@@ -35,6 +36,7 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (usuarios.length === 0) return null;
+        if (!usuarios[0]!.activo) return null;
 
         return {
           id: String(usuarios[0]!.id),
@@ -56,9 +58,32 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub!;
-        session.user.agencia_id = token.agencia_id;
-        session.user.rol = token.rol;
+        // Fetch fresh user data from DB on every session check
+        try {
+          const userData = await query<{
+            id: number;
+            agencia_id: number;
+            rol: string;
+            activo: boolean;
+          }>(
+            `SELECT id, agencia_id, rol, activo FROM lg_usuarios WHERE id = @id`,
+            { id: Number(token.sub) }
+          );
+
+          if (userData.length === 0 || !userData[0]!.activo) {
+            // User deleted or deactivated → invalidate session
+            return { ...session, expires: new Date(0).toISOString() };
+          }
+
+          session.user.id = token.sub!;
+          session.user.agencia_id = userData[0]!.agencia_id;
+          session.user.rol = userData[0]!.rol;
+        } catch {
+          // If DB fails, fall back to token data
+          session.user.id = token.sub!;
+          session.user.agencia_id = token.agencia_id;
+          session.user.rol = token.rol;
+        }
       }
       return session;
     },
@@ -72,5 +97,6 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 };
