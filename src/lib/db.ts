@@ -1,52 +1,39 @@
 import sql from "mssql";
 
-interface DbConfig {
-  server: string;
-  user: string;
-  password: string;
-  database: string;
-  port: number;
-  options?: sql.config["options"];
-}
-
 let pool: sql.ConnectionPool | null = null;
 
-function getConfig(): DbConfig {
-  const server = process.env.SQL_SERVER;
-  const user = process.env.SQL_USER;
-  const password = process.env.SQL_PASSWORD;
-  const database = process.env.SQL_DB;
-  const port = process.env.PORTSQL ? Number(process.env.PORTSQL) : 1433;
+function env(key: string, def: string): string {
+  return process.env[key] ?? def;
+}
 
-  if (!server || !user || !password || !database) {
-    throw new Error(
-      "Missing SQL Server env vars: SQL_SERVER, SQL_USER, SQL_PASSWORD, SQL_DB"
-    );
-  }
-
-  return { server, user, password, database, port };
+function envNum(key: string, def: number): number {
+  const v = process.env[key];
+  return v ? Number(v) : def;
 }
 
 export async function getPool(): Promise<sql.ConnectionPool> {
   if (pool?.connected) return pool;
 
-  const cfg = getConfig();
+  const server = env("SQL_SERVER", "");
+  const user = env("SQL_USER", "");
+  const password = env("SQL_PASSWORD", "");
+  const database = env("SQL_DB", "");
+  const port = envNum("PORTSQL", 1433);
+
+  if (!server || !user || !password || !database) {
+    throw new Error("Missing SQL Server env vars: SQL_SERVER, SQL_USER, SQL_PASSWORD, SQL_DB");
+  }
 
   pool = new sql.ConnectionPool({
-    server: cfg.server,
-    port: cfg.port,
-    user: cfg.user,
-    password: cfg.password,
-    database: cfg.database,
+    server, port, user, password, database,
     options: {
-      encrypt: false,
-      trustServerCertificate: true,
-      ...cfg.options,
+      encrypt: env("SQL_ENCRYPT", "false") === "true",
+      trustServerCertificate: env("SQL_TRUST_SERVER", "true") === "true",
     },
     pool: {
-      max: 10,
-      min: 0,
-      idleTimeoutMillis: 30000,
+      max: envNum("SQL_POOL_MAX", 10),
+      min: envNum("SQL_POOL_MIN", 0),
+      idleTimeoutMillis: envNum("SQL_POOL_IDLE", 30000),
     },
   });
 

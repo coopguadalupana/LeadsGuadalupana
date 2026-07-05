@@ -23,3 +23,11 @@ body {
   background: var(--color-brand-bg);
   color: var(--color-brand-text);
 }
+
+/* Utility classes for brand colors */
+.bg-brand-blue-dark { background: #003160; }
+.bg-brand-red { background: #cf2e2e; }
+.text-brand { color: #464646; }
+.text-brand-muted { color: #6b7280; }
+.text-brand-subtle { color: #9ca3af; }
+.border-brand { border-color: #e5e5e5; }

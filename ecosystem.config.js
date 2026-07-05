@@ -5,6 +5,12 @@ module.exports = {
       script: "node_modules/next/dist/bin/next",
       args: "start",
       env: {
+        SQL_ENCRYPT: "false",
+        SQL_TRUST_SERVER: "true",
+        SQL_POOL_MAX: "10",
+        SQL_POOL_MIN: "0",
+        SQL_POOL_IDLE: "30000",
+        NEXTAUTH_MAX_AGE: "2592000",
         NODE_ENV: "production",
         PORT: 3007,
         NEXT_BASE_PATH: "/leads",

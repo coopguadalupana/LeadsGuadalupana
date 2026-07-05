@@ -74,7 +74,7 @@ export default function InboxPage() {
             const p = new URLSearchParams();
             const est = f.get("estado") as string;
             const busq = f.get("q") as string;
-            if (est !== "auto_respondiendo") p.set("estado", est);
+            if (est !== "todas") p.set("estado", est);
             if (busq) p.set("q", busq);
             router.push(`/app/inbox?${p}`);
           }}
