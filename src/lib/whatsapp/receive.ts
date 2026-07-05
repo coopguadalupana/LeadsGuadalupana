@@ -25,6 +25,17 @@ interface WhatsAppMessage {
     from: string;
     referred_product?: { catalog_id: string; product_retailer_id: string };
   };
+  referral?: {
+    source_url?: string;
+    source_type?: string;
+    source_id?: string;
+    headline?: string;
+    body?: string;
+    media_url?: string;
+    video_url?: string;
+    image_url?: string;
+    ctwa_clid?: string;
+  };
 }
 
 interface WhatsAppStatus {
@@ -135,7 +146,7 @@ export function parsePayload(body: WebhookPayload): {
           location: msg.location
             ? { latitude: msg.location.latitude, longitude: msg.location.longitude }
             : undefined,
-          ad_id: msg.context?.referred_product?.catalog_id,
+          ad_id: msg.referral?.source_id ?? msg.context?.referred_product?.catalog_id,
           context_message_id: msg.context?.id,
         };
         messages.push(parsed);
