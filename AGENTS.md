@@ -47,6 +47,7 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 | GET    | `/api/ads/performance`            | Anuncios con métricas              |
 | GET    | `/api/media/[id]`                  | Proxy de multimedia WhatsApp (imagen, video, audio, doc) |
 | GET    | `/api/agency`                     | Config de la agencia actual        |
+| GET    | `/api/agency/list`               | Listar agencias (admin+ todas, sino solo su agencia) |
 | GET    | `/api/agency/config`              | Config JSON de la agencia          |
 | PATCH  | `/api/agency/config`              | Actualizar config (solo admin)     |
 | GET    | `/api/agency/agents`              | Listar agentes de la agencia       |
@@ -59,7 +60,10 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 | POST   | `/api/agency/sync-ldap`           | Sincronizar desde LDAP             |
 | GET    | `/api/contacts`                   | Listar contactos con búsqueda      |
 | PATCH  | `/api/contacts`                   | Crear/actualizar contacto (upsert) |
-| GET    | `/api/leads/calificaciones`       | Calificaciones desde BD            |
+| GET    | `/api/leads/calificaciones`       | Listar calificaciones/etiquetas    |
+| POST   | `/api/leads/calificaciones`      | Crear etiqueta (admin+)           |
+| PATCH  | `/api/leads/calificaciones/[id]` | Actualizar etiqueta (admin+)      |
+| DELETE | `/api/leads/calificaciones/[id]` | Eliminar etiqueta (admin+)        |
 | POST   | `/api/flows`                      | Crear flow                         |
 | GET    | `/api/flows`                      | Listar flows                       |
 | PATCH  | `/api/flows/[id]`                 | Actualizar flow                    |
@@ -185,15 +189,15 @@ npm run typecheck  # TypeScript estricto
 
 | Página     | Componente | Fuente datos | Refresh | Acciones |
 | ---------- | ---------- | ------------ | ------- | -------- |
-| `/app/inbox` | Client     | API `/api/conversations` | Polling 10s | Filtros, badge no leídos, preview mensaje |
-| `/app/inbox/[id]` | Client | API `/api/conversations/[id]` | Polling 5s | Enviar texto, imagen/video, ver multimedia, scroll automático |
-| `/app/leads` | Client | API `/api/leads` | Polling 10s | Cambiar calificación inline |
+| `/app/inbox` | Client     | API `/api/conversations` | Polling 10s | Filtros (estado, búsqueda, agencia admin+), badge no leídos, preview mensaje |
+| `/app/inbox/[id]` | Client | API `/api/conversations/[id]` | Polling 5s | Enviar texto, imagen/video, ver multimedia, scroll automático, notas del lead en detalles |
+| `/app/leads` | Client | API `/api/leads` | Polling 10s | Cambiar calificación inline, notas inline, filtro dinámico por calificación |
 | `/app/flows` | Client | API `/api/flows` | Manual | Crear/editar/eliminar/toggle |
 | `/app/flows/[id]` | Client | API `/api/flows` | Manual | Editor visual drag & drop (React Flow) |
 | `/app/ads` | Client | API `/api/ads/performance` | Manual | Filtros |
 | `/app/ads-config` | Client | API `/api/agency/ads` | Manual | Gestionar mappings anuncio→agencia |
 | `/app/usuarios` | Client | API `/api/agency/users` | Manual | Gestionar roles, activo/inactivo, sincronizar LDAP |
-| `/app/config` | Client | API `/api/agency/config` | Manual | Guardar JSON (solo admin) |
+| `/app/config` | Client | API `/api/agency/config` | Manual | Guardar JSON (solo admin), gestionar etiquetas/calificaciones |
 | `/app/dashboard` | Client | Metabase público embebido | — | Dashboard Metabase en iframe |
 
 ## Roles y permisos

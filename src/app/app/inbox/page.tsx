@@ -3,11 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { apiGet } from "@/lib/client-api";
 import { formatGtDate } from "@/lib/format-date";
+import { canViewAllConversationsSync } from "@/lib/auth/permissions-client";
 
 interface Conversacion {
   id: number;
+  agencia_id: number;
+  agencia_nombre?: string;
   plataforma: string;
   contacto_externo_id: string;
   estado: string;
@@ -21,14 +25,30 @@ interface Conversacion {
   etiquetas?: string | null;
 }
 
+interface Agencia {
+  id: number;
+  nombre: string;
+}
+
 export default function InboxPage() {
   const router = useRouter();
   const sp = useSearchParams();
+  const { data: session } = useSession();
+  const rol = session?.user?.rol ?? "";
+  const puedeVerTodas = canViewAllConversationsSync(rol);
   const estado = sp.get("estado") ?? "todas";
   const q = sp.get("q") ?? "";
+  const agenciaFiltro = sp.get("agencia_id") ?? "";
   const activeRef = useRef(true);
 
   const [conversaciones, setConversaciones] = useState<Conversacion[]>([]);
+  const [agencias, setAgencias] = useState<Agencia[]>([]);
+
+  useEffect(() => {
+    if (puedeVerTodas) {
+      apiGet<Agencia[]>("/agency/list").then(setAgencias).catch(() => {});
+    }
+  }, [puedeVerTodas]);
 
   useEffect(() => {
     activeRef.current = true;
@@ -38,6 +58,7 @@ export default function InboxPage() {
       const params = new URLSearchParams();
       if (estado !== "todas") params.set("estado", estado);
       if (q) params.set("q", q);
+      if (agenciaFiltro) params.set("agencia_id", agenciaFiltro);
       try {
         const data = await apiGet<Conversacion[]>(`/conversations?${params}`);
         if (activeRef.current) setConversaciones(data);
@@ -52,7 +73,7 @@ export default function InboxPage() {
       clearInterval(interval);
       controller.abort();
     };
-  }, [estado, q]);
+  }, [estado, q, agenciaFiltro]);
 
   function preview(c: Conversacion) {
     try {
@@ -74,12 +95,20 @@ export default function InboxPage() {
             const p = new URLSearchParams();
             const est = f.get("estado") as string;
             const busq = f.get("q") as string;
+            const agId = f.get("agencia_id") as string;
             if (est !== "todas") p.set("estado", est);
             if (busq) p.set("q", busq);
+            if (agId) p.set("agencia_id", agId);
             router.push(`/app/inbox?${p}`);
           }}
-          className="flex gap-2"
+          className="flex flex-wrap gap-2"
         >
+          {puedeVerTodas && agencias.length > 0 && (
+            <select name="agencia_id" defaultValue={agenciaFiltro} className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" style={{ borderColor: "#e5e5e5", color: "#464646" }}>
+              <option value="">Todas las agencias</option>
+              {agencias.map(a => <option key={a.id} value={String(a.id)}>{a.nombre}</option>)}
+            </select>
+          )}
           <select name="estado" defaultValue={estado} className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500" style={{ borderColor: "#e5e5e5", color: "#464646" }}>
             <option value="auto_respondiendo">Auto-respuesta</option>
             <option value="en_espera">En espera</option>
@@ -126,6 +155,11 @@ export default function InboxPage() {
                   <span className="text-xs" style={{ color: "#9ca3af" }}>
                     {c.asignado_nombre ? `Asignado: ${c.asignado_nombre}` : c.plataforma}
                   </span>
+                  {c.agencia_nombre && (
+                    <span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium" style={{ color: "#0e5bb0" }}>
+                      {c.agencia_nombre}
+                    </span>
+                  )}
                   {c.etiquetas && (() => {
                     try { return JSON.parse(c.etiquetas).map((t: string) => (
                       <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-xs" style={{ color: "#6b7280" }}>{t}</span>

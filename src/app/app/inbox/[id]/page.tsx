@@ -62,6 +62,7 @@ export default function ChatPage({
   const [previewMedia, setPreviewMedia] = useState<{ url: string; type: string; mime?: string; caption?: string } | null>(null);
   const [leadId, setLeadId] = useState<number | null>(null);
   const [leadEtapa, setLeadEtapa] = useState<string>("nuevo");
+  const [leadNotas, setLeadNotas] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
@@ -94,12 +95,13 @@ export default function ChatPage({
   }, []);
 
   useEffect(() => {
-    apiGet<Array<{ id: number; etapa: string | null }>>(`/leads?conversacion_id=${id}`)
-      .then((leads: Array<{ id: number; etapa: string | null }>) => {
+    apiGet<Array<{ id: number; etapa: string | null; notas: string | null }>>(`/leads?conversacion_id=${id}`)
+      .then((leads: Array<{ id: number; etapa: string | null; notas: string | null }>) => {
         if (leads.length > 0) {
           const lead = leads[0]!;
           setLeadId(lead.id);
           setLeadEtapa(lead.etapa ?? "nuevo");
+          setLeadNotas(lead.notas ?? "");
         }
       })
       .catch(() => {});
@@ -143,6 +145,9 @@ export default function ChatPage({
         dpi: clienteDpi || null,
         etiquetas: clienteTagsArray.length ? JSON.stringify(clienteTagsArray) : null,
       });
+      if (leadId) {
+        await apiPatch(`/leads/${leadId}`, { notas: leadNotas || null });
+      }
       setMostrarDetalles(false);
       await fetchConv();
     } catch {
@@ -447,6 +452,18 @@ export default function ChatPage({
                   + Agregar
                 </button>
               </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Notas del lead</label>
+              <textarea
+                value={leadNotas}
+                onChange={(e) => setLeadNotas(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                style={{ borderColor: "#e5e5e5", color: "#464646" }}
+                rows={3}
+                placeholder="Notas internas sobre este lead..."
+              />
             </div>
 
             <button onClick={guardarContacto} disabled={guardandoContacto}
