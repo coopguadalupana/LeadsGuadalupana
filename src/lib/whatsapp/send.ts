@@ -27,6 +27,10 @@ interface WhatsAppResponse {
   messages: Array<{ id: string }>;
 }
 
+interface SendMediaResult {
+  mediaId: string;
+}
+
 async function apiCall(payload: Record<string, unknown>): Promise<WhatsAppResponse> {
   const token = process.env.WHATSAPP_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_ID;
@@ -84,7 +88,7 @@ interface SendMediaParams {
   caption?: string;
 }
 
-export async function sendMedia(params: SendMediaParams): Promise<WhatsAppResponse> {
+export async function sendMedia(params: SendMediaParams): Promise<SendMediaResult> {
   const token = process.env.WHATSAPP_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_ID;
   const apiVersion = process.env.WHATSAPP_API_VERSION ?? "v25.0";
@@ -120,7 +124,7 @@ export async function sendMedia(params: SendMediaParams): Promise<WhatsAppRespon
   }
 
   // Send the uploaded media
-  return apiCall({
+  await apiCall({
     to: params.to,
     type: params.mediaType,
     [params.mediaType]: {
@@ -128,6 +132,8 @@ export async function sendMedia(params: SendMediaParams): Promise<WhatsAppRespon
       caption: params.caption ?? params.fileName,
     },
   });
+
+  return { mediaId };
 }
 
 export async function sendInteractive(params: SendInteractiveParams): Promise<WhatsAppResponse> {

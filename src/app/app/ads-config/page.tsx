@@ -32,13 +32,7 @@ export default function AdsConfigPage() {
 
   useEffect(() => {
     apiGet<AdMapping[]>("/agency/ads").then(setAds).catch(() => {});
-    apiGet<Agencia[]>("/agency/agents")
-      .then((agentes) => {
-        const unique = new Map<number, string>();
-        agentes.forEach((a: any) => unique.set(a.agencia_id, a.agencia_nombre));
-        setAgencias(Array.from(unique.entries()).map(([id, nombre]) => ({ id, nombre })));
-      })
-      .catch(() => {});
+    apiGet<Agencia[]>("/agency/list").then(setAgencias).catch(() => {});
   }, []);
 
   function abrirModal(ad?: AdMapping) {

@@ -17,23 +17,27 @@ export async function GET(
 
   const contactoJoin = `LEFT JOIN lg_contactos ct ON ct.agencia_id = c.agencia_id AND ct.telefono = c.contacto_externo_id`;
   const contactoFields = `, ct.id AS contacto_id, ct.nombre AS cliente_nombre, ct.dpi AS cliente_dpi, ct.etiquetas`;
+  const cierreJoin = `LEFT JOIN lg_usuarios cu ON cu.id = c.cerrado_por`;
+  const cierreFields = `, c.motivo_cierre, c.cerrado_por, cu.nombre AS cerrado_por_nombre`;
 
   if (await canViewAllConversations(auth.user.rol_id)) {
     sql = `SELECT c.id, c.agencia_id, c.plataforma, c.contacto_externo_id, c.estado,
                   c.ad_id, c.campaign_id, c.asignado_a, c.creado, a.nombre AS agencia_nombre
-                  ${contactoFields}
+                  ${contactoFields}${cierreFields}
            FROM lg_conversaciones c
            JOIN lg_agencias a ON a.id = c.agencia_id
            ${contactoJoin}
+           ${cierreJoin}
            WHERE c.id = @id`;
     sqlParams = { id: Number(id) };
   } else {
     sql = `SELECT c.id, c.agencia_id, c.plataforma, c.contacto_externo_id, c.estado,
                   c.ad_id, c.campaign_id, c.asignado_a, c.creado, a.nombre AS agencia_nombre
-                  ${contactoFields}
+                  ${contactoFields}${cierreFields}
            FROM lg_conversaciones c
            JOIN lg_agencias a ON a.id = c.agencia_id
            ${contactoJoin}
+           ${cierreJoin}
            WHERE c.id = @id AND c.agencia_id = @agenciaId`;
     sqlParams = { id: Number(id), agenciaId: auth.user.agencia_id };
   }
@@ -91,7 +95,9 @@ export async function PATCH(
     paramsObj.estado = body.estado;
     if (body.estado === "cerrada" && body.motivo_cierre !== undefined) {
       updates.push("motivo_cierre = @motivoCierre");
+      updates.push("cerrado_por = @cerradoPor");
       paramsObj.motivoCierre = body.motivo_cierre;
+      paramsObj.cerradoPor = auth.user.id;
     }
   }
 
@@ -119,6 +125,22 @@ export async function PATCH(
      WHERE id = @id`,
     paramsObj
   );
+
+  if (body.estado === "cerrada" && body.motivo_cierre) {
+    const cierreMsgId = `system_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await execute(
+      `INSERT INTO lg_mensajes (conversacion_id, message_id, role, tipo, contenido)
+       VALUES (@convId, @msgId, 'bot', 'system_cierre', @contenido)`,
+      {
+        convId: Number(id),
+        msgId: cierreMsgId,
+        contenido: JSON.stringify({
+          text: `Conversación cerrada por ${auth.user.name}`,
+          motivo_cierre: body.motivo_cierre,
+        }),
+      }
+    );
+  }
 
   return NextResponse.json({ success: true });
 }

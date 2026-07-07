@@ -39,26 +39,30 @@ export async function POST(
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const mediaType = file.type.startsWith("video") ? "video" : "image";
+    const mimeType = file.type || (file.name.match(/\.(jpe?g|png|gif|webp)$/i) ? "image/jpeg" : file.name.match(/\.(mp4|mov|avi)$/i) ? "video/mp4" : "image/jpeg");
+    const whatsappType = mimeType.startsWith("video") ? "video" : "image";
+    const dbType = whatsappType === "video" ? "video" : "imagen";
 
     const waResponse = await sendMedia({
       to: conv.contacto_externo_id,
       fileBuffer: buffer,
-      mimeType: file.type,
+      mimeType,
       fileName: file.name,
-      mediaType,
+      mediaType: whatsappType,
     });
 
+    const mediaMsgId = `agent_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     await execute(
-      `INSERT INTO lg_mensajes (conversacion_id, role, tipo, contenido)
-       VALUES (@convId, 'agente', @tipo, @contenido)`,
+      `INSERT INTO lg_mensajes (conversacion_id, message_id, role, tipo, contenido)
+       VALUES (@convId, @msgId, 'agente', @tipo, @contenido)`,
       {
         convId: conv.id,
-        tipo: mediaType,
+        msgId: mediaMsgId,
+        tipo: dbType,
         contenido: JSON.stringify({
-          [mediaType === "image" ? "image_id" : "video_id"]: waResponse.messages[0]?.id,
-          [mediaType === "image" ? "image_mime_type" : "video_mime_type"]: file.type,
-          type: mediaType,
+          [whatsappType === "image" ? "image_id" : "video_id"]: waResponse.mediaId,
+          [whatsappType === "image" ? "image_mime_type" : "video_mime_type"]: mimeType,
+          type: whatsappType,
         }),
       }
     );

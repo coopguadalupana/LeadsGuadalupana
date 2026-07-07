@@ -6,26 +6,29 @@ WhatsApp/Meta Inbox multi-tenant que ingiere mensajes de WhatsApp (Cloud API), l
 
 ## Stack
 
-| Capa     | Tecnología                                                  |
-| -------- | ----------------------------------------------------------- |
-| Frontend | Next.js 16.2.10, React 19.2.4, Tailwind CSS v4              |
-| Backend  | Next.js API Routes (App Router), TypeScript strict          |
-| Base     | SQL Server (BankworksPhoenix) vía `mssql` con pool          |
-| Auth     | NextAuth v4 + LDAP (`ldapjs`)                               |
-| Prod     | PM2 (`ecosystem.config.js`) + Nginx reverse proxy           |
+| Capa       | Tecnología                                                  |
+| ---------- | ----------------------------------------------------------- |
+| Frontend   | Next.js 16.2.10, React 19.2.4, Tailwind CSS v4              |
+| Backend    | Next.js API Routes (App Router), TypeScript strict          |
+| Base prod  | SQL Server (LeadsGuadalupana) vía `mssql` con pool          |
+| Base (UAT) | SQL Server (BankworksPhoenixUAT)                            |
+| Auth       | NextAuth v4 + LDAP (`ldapjs`)                               |
+| Prod       | PM2 (`ecosystem.config.js`) + Nginx reverse proxy           |
+| BI         | Metabase (`http://10.60.81.130:3110`) dashboard público     |
 
 ## Rutas del frontend
 
 - `/login` — Autenticación LDAP
 - `/app/inbox` — Bandeja de conversaciones por agencia
 - `/app/inbox/[id]` — Chat individual con contacto
-- `/app/leads` — Leads generados
+- `/app/leads` — Leads generados (con etapa: nuevo/contactado/calificado/convertido/seguimiento/perdido)
 - `/app/ads` — Rendimiento de anuncios
 - `/app/ads-config` — Gestión manual de anuncios por agencia (admin+)
 - `/app/flows` — Flujos de auto-respuesta
 - `/app/flows/[id]` — Editor visual drag & drop de flujos
 - `/app/usuarios` — Gestión de usuarios y roles (admin+)
 - `/app/config` — Configuración de la agencia (admin+)
+- `/app/dashboard` — Dashboard Metabase público embebido en iframe
 
 ## API REST
 
@@ -61,6 +64,7 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 | GET    | `/api/flows`                      | Listar flows                       |
 | PATCH  | `/api/flows/[id]`                 | Actualizar flow                    |
 | DELETE | `/api/flows/[id]`                 | Eliminar flow                      |
+| GET    | `/api/metabase/embed`             | JWT para embedding Metabase        |
 | GET    | `/api/auth/providers`             | Login SSO (NextAuth)               |
 
 ## Webhook WhatsApp
@@ -78,17 +82,17 @@ Todas bajo `/leads/api/` (basePath de Next.js):
 Tablas con prefijo `lg_`:
 
 - `lg_agencias` — Agencias financieras multi-tenant (con zona_horaria, idioma_plantillas, etc.)
-- `lg_usuarios` — Usuarios mapeados vía LDAP (con rol_id FK a lg_roles)
-- `lg_conversaciones` — Hilos por contacto externo (wa_id), con estado, ad_id, motivo_cierre
+- `lg_usuarios` — Usuarios mapeados vía LDAP (con rol NVARCHAR(20) y tablas lg_roles/lg_permisos/lg_roles_permisos para control de permisos)
+- `lg_conversaciones` — Hilos por contacto externo (wa_id), con estado, ad_id, motivo_cierre, cerrado_por
 - `lg_mensajes` — Mensajes individuales con tipo (gobernado por lg_tipos_mensaje), contenido JSON
-- `lg_leads` — Leads con calificación (gobernado por lg_calificaciones)
+- `lg_leads` — Leads con calificación (gobernado por lg_calificaciones) y etapa (nuevo/contactado/calificado/convertido/seguimiento/perdido)
 - `lg_flows` — Flujos de auto-respuesta configurables (JSON triggers + pasos)
 - `lg_contactos` — Datos del cliente (nombre, DPI, etiquetas) compartidos entre conversaciones
 - `lg_ads_cache` — Caché de atribución de anuncios (incluye es_manual para entries manuales)
 - `lg_config` — Configuración del sistema (agencia_default, polling, sesión)
 - `lg_estados_transiciones` — Reglas de máquina de estados (origen→evento→destino)
 - `lg_tipos_mensaje` — Mapeo WhatsApp→tipo interno
-- `lg_calificaciones` — Catálogo de calificaciones (hot/warm/cold con colores)
+- `lg_calificaciones` — Catálogo de calificaciones (hot/warm/cold con colores) y etapas (nuevo/contactado/calificado/convertido/seguimiento/perdido)
 - `lg_roles` — Roles del sistema (jerarquía)
 - `lg_permisos` — Catálogo de permisos
 - `lg_roles_permisos` — Asignación rol→permiso
@@ -162,6 +166,8 @@ pm2 start ecosystem.config.js
 | `SQL_POOL_MIN`              | Pool mínimo conexiones (default: 0)      |
 | `SQL_POOL_IDLE`             | Timeout pool idle (default: 30000)       |
 | `NEXTAUTH_MAX_AGE`          | Sesión max age segundos (default: 30d)   |
+| `METABASE_SECRET_KEY`       | Secret key para JWT embedding Metabase   |
+| `METABASE_INSTANCE_URL`     | URL de instancia Metabase                |
 
 ## Developer commands
 
@@ -188,6 +194,7 @@ npm run typecheck  # TypeScript estricto
 | `/app/ads-config` | Client | API `/api/agency/ads` | Manual | Gestionar mappings anuncio→agencia |
 | `/app/usuarios` | Client | API `/api/agency/users` | Manual | Gestionar roles, activo/inactivo, sincronizar LDAP |
 | `/app/config` | Client | API `/api/agency/config` | Manual | Guardar JSON (solo admin) |
+| `/app/dashboard` | Client | Metabase público embebido | — | Dashboard Metabase en iframe |
 
 ## Roles y permisos
 
@@ -259,3 +266,6 @@ Basado en `cooperativaguadalupana.com.gt`:
 - Usar ngrok/Cloudflare Tunnel para pruebas locales de webhook.
 - Nginx maneja el reverse proxy con basePath `/leads/` → `localhost:3007`.
 - Para múltiples agencias/tenants, duplicar instancia en otro puerto con su propio `.env`.
+- Metabase dashboard público: `http://10.60.81.130:3110/public/dashboard/eb26a683-fa81-42b6-aa13-4e9774fdd427`
+- Embed via iframe en `/app/dashboard` usando dashboard público (sin licencia).
+- JWT embedding disponible via `/api/metabase/embed` para cuando se adquiera licencia.

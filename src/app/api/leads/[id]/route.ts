@@ -19,6 +19,7 @@ export async function PATCH(
   if (body.calificacion !== undefined) { updates.push("calificacion = @calificacion"); paramsObj.calificacion = body.calificacion; }
   if (body.notas !== undefined) { updates.push("notas = @notas"); paramsObj.notas = body.notas; }
   if (body.asignado_a !== undefined) { updates.push("asignado_a = @asignadoA"); paramsObj.asignadoA = body.asignado_a; }
+  if (body.etapa !== undefined) { updates.push("etapa = @etapa"); paramsObj.etapa = body.etapa; }
 
   if (updates.length === 0) {
     return NextResponse.json({ error: "Sin campos para actualizar" }, { status: 400 });

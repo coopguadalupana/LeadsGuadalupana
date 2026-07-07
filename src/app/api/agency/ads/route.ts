@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
        es_manual = 1,
        ultima_actualizacion = GETUTCDATE()
      WHEN NOT MATCHED THEN INSERT (ad_id, campaign_id, campaign_name, agency_id, es_manual)
-       VALUES (@adId, '', @campaignName, @agencyId, 1)`,
+        VALUES (@adId, '', @campaignName, @agencyId, 1);`,
+
     {
       adId: ad_id,
       agencyId: Number(agency_id),

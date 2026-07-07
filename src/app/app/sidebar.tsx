@@ -17,6 +17,8 @@ export default function Sidebar({
   const navItems = [
     { href: "/app/inbox", label: "Inbox", icon: "💬", show: true },
     { href: "/app/leads", label: "Leads", icon: "👤", show: true },
+    { href: "/app/dashboard", label: "Dashboard", icon: "📊", show: true },
+    { href: "/app/ads", label: "Rendimiento", icon: "📈", show: true },
     { href: "/app/flows", label: "Flujos", icon: "⚙️", show: canManageFlowsSync(rol) },
     { href: "/app/ads-config", label: "Anuncios", icon: "📢", show: canManageUsersSync(rol) },
     { href: "/app/usuarios", label: "Usuarios", icon: "👥", show: canManageUsersSync(rol) },
@@ -27,7 +29,7 @@ export default function Sidebar({
     <aside className="flex w-64 flex-col" style={{ background: "#003160" }}>
       <div className="border-b px-5 py-5" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
         <h2 className="text-lg font-bold text-white">leadsGuadalupana</h2>
-        <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.6)" }}>{rol.replace("_", " ")}</p>
+        <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.6)" }}>{(rol ?? "").replace("_", " ")}</p>
       </div>
 
       <nav className="flex-1 space-y-0.5 p-3">

@@ -21,6 +21,8 @@ interface Conversacion {
   estado: string;
   mensajes: Mensaje[];
   motivo_cierre?: string | null;
+  cerrado_por?: number | null;
+  cerrado_por_nombre?: string | null;
   cliente_nombre?: string | null;
   cliente_dpi?: string | null;
   etiquetas?: string | null;
@@ -57,6 +59,9 @@ export default function ChatPage({
   const [nuevoTag, setNuevoTag] = useState("");
   const [guardandoContacto, setGuardandoContacto] = useState(false);
   const [busquedaMensaje, setBusquedaMensaje] = useState("");
+  const [previewMedia, setPreviewMedia] = useState<{ url: string; type: string; mime?: string; caption?: string } | null>(null);
+  const [leadId, setLeadId] = useState<number | null>(null);
+  const [leadEtapa, setLeadEtapa] = useState<string>("nuevo");
   const fileInput = useRef<HTMLInputElement>(null);
   const msgEnd = useRef<HTMLDivElement>(null);
   const prevLen = useRef(0);
@@ -87,6 +92,26 @@ export default function ChatPage({
   useEffect(() => {
     apiGet<Array<{ id: number; nombre: string; rol: string; agencia_nombre?: string; agencia_id: number }>>("/agency/agents").then(setAgentes).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    apiGet<Array<{ id: number; etapa: string | null }>>(`/leads?conversacion_id=${id}`)
+      .then((leads: Array<{ id: number; etapa: string | null }>) => {
+        if (leads.length > 0) {
+          const lead = leads[0]!;
+          setLeadId(lead.id);
+          setLeadEtapa(lead.etapa ?? "nuevo");
+        }
+      })
+      .catch(() => {});
+  }, [id]);
+
+  async function cambiarEtapa(valor: string) {
+    if (!leadId) return;
+    try {
+      await apiPatch(`/leads/${leadId}`, { etapa: valor });
+      setLeadEtapa(valor);
+    } catch {}
+  }
 
   function mostrarDetallesContacto() {
     if (!conv) return;
@@ -198,6 +223,7 @@ export default function ChatPage({
       });
       if (res.ok) {
         if (fileInput.current) fileInput.current.value = "";
+        setTexto("");
         await fetchConv();
       }
     } finally {
@@ -231,10 +257,30 @@ export default function ChatPage({
               }`}>
                 {conv.estado.replace("_", " ")}
               </span>
-              {conv.motivo_cierre && <span className="italic">Cerrado: {conv.motivo_cierre}</span>}
+              {conv.motivo_cierre && <span className="italic">Cerrado por {conv.cerrado_por_nombre ?? "desconocido"}: {conv.motivo_cierre}</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {leadId && (
+              <select
+                value={leadEtapa}
+                onChange={(e) => cambiarEtapa(e.target.value)}
+                className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium capitalize focus:outline-none"
+                aria-label="Cambiar etapa"
+                style={{
+                  background: leadEtapa === "nuevo" ? "#e3f2fd" : leadEtapa === "contactado" ? "#fff3e0" : leadEtapa === "calificado" ? "#f3e5f5" : leadEtapa === "convertido" ? "#e8f5e9" : leadEtapa === "seguimiento" ? "#fce4ec" : "#eeeeee",
+                  color: leadEtapa === "nuevo" ? "#1565c0" : leadEtapa === "contactado" ? "#e65100" : leadEtapa === "calificado" ? "#7b1fa2" : leadEtapa === "convertido" ? "#2e7d32" : leadEtapa === "seguimiento" ? "#c62828" : "#616161",
+                  border: "none",
+                }}
+              >
+                <option value="nuevo">Nuevo</option>
+                <option value="contactado">Contactado</option>
+                <option value="calificado">Calificado</option>
+                <option value="convertido">Convertido</option>
+                <option value="seguimiento">Seguimiento</option>
+                <option value="perdido">Perdido</option>
+              </select>
+            )}
             <button
               onClick={mostrarDetallesContacto}
               aria-label="Detalles del contacto"
@@ -438,6 +484,48 @@ export default function ChatPage({
         </div>
       )}
 
+      {/* Modal de previsualizacion multimedia */}
+      {previewMedia && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85" onClick={() => setPreviewMedia(null)}>
+          <div className="relative flex max-h-[90vh] max-w-[90vw] flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute -top-10 right-0 flex gap-2">
+              <a
+                href={previewMedia.url}
+                download
+                className="rounded-lg bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+              >
+                ⬇ Descargar
+              </a>
+              <button
+                onClick={() => setPreviewMedia(null)}
+                className="rounded-lg bg-white/20 px-3 py-1.5 text-sm text-white backdrop-blur-sm transition-colors hover:bg-white/30"
+              >
+                ✕ Cerrar
+              </button>
+            </div>
+            {previewMedia.type === "image" ? (
+              <img src={previewMedia.url} alt={previewMedia.caption ?? "Imagen"} className="max-h-[85vh] max-w-full rounded-lg object-contain" />
+            ) : previewMedia.type === "video" ? (
+              <video controls autoPlay className="max-h-[85vh] max-w-full rounded-lg">
+                <source src={previewMedia.url} type={previewMedia.mime ?? "video/mp4"} />
+              </video>
+            ) : (
+              <div className="flex flex-col items-center gap-4 rounded-lg bg-white p-8">
+                <audio controls autoPlay className="w-80">
+                  <source src={previewMedia.url} type={previewMedia.mime ?? "audio/ogg"} />
+                </audio>
+                <a href={previewMedia.url} download className="rounded-lg px-4 py-2 text-sm font-medium text-white" style={{ background: "#0e5bb0" }}>
+                  ⬇ Descargar audio
+                </a>
+              </div>
+            )}
+            {previewMedia.caption && (
+              <p className="mt-2 max-w-lg text-center text-sm text-white/80">{previewMedia.caption}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 space-y-3 overflow-y-auto py-4">
         {conv.mensajes.filter((msg) => {
           if (!busquedaMensaje) return true;
@@ -451,6 +539,20 @@ export default function ChatPage({
             typeof msg.contenido === "string"
               ? JSON.parse(msg.contenido)
               : msg.contenido;
+
+          if (msg.tipo === "system_cierre") {
+            return (
+              <div key={msg.id} className="flex justify-center">
+                <div className="flex max-w-[85%] items-center gap-2 rounded-lg px-4 py-2 text-xs"
+                  style={{ background: "#fef3e2", color: "#92400e" }}>
+                  <span>🔒</span>
+                  <span className="font-medium">{c.text}</span>
+                  {c.motivo_cierre && <span className="opacity-75">— {c.motivo_cierre}</span>}
+                  <span className="ml-1 opacity-60">{formatGtTime(msg.recibido)}</span>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div
@@ -478,8 +580,9 @@ export default function ChatPage({
                     <img
                       src={`/leads/api/media/${c.image_id}`}
                       alt={c.image_caption ?? "Imagen"}
-                      className="max-w-full rounded-lg"
+                      className="max-w-60 w-auto h-auto max-h-72 rounded-lg object-cover cursor-pointer transition-opacity hover:opacity-90"
                       loading="lazy"
+                      onClick={() => setPreviewMedia({ url: `/leads/api/media/${c.image_id}`, type: "image", mime: c.image_mime_type, caption: c.image_caption })}
                     />
                     {c.image_caption && (
                       <p className="mt-1 text-sm" style={{ color: msg.role === "agente" ? "#fff" : "#464646" }}>
@@ -492,13 +595,18 @@ export default function ChatPage({
                 ) : msg.tipo === "video" && c.video_id ? (
                   <video
                     controls
-                    className="max-w-full rounded-lg"
+                    className="max-w-72 w-auto h-auto max-h-72 rounded-lg cursor-pointer"
                     preload="metadata"
+                    onClick={() => setPreviewMedia({ url: `/leads/api/media/${c.video_id}`, type: "video", mime: c.video_mime_type })}
                   >
                     <source src={`/leads/api/media/${c.video_id}`} type={c.video_mime_type ?? "video/mp4"} />
                   </video>
                 ) : msg.tipo === "audio" && c.audio_id ? (
-                  <audio controls className="max-w-full">
+                  <audio
+                    controls
+                    className="max-w-full cursor-pointer"
+                    onClick={() => setPreviewMedia({ url: `/leads/api/media/${c.audio_id}`, type: "audio", mime: c.audio_mime_type })}
+                  >
                     <source src={`/leads/api/media/${c.audio_id}`} type={c.audio_mime_type ?? "audio/ogg"} />
                   </audio>
                 ) : msg.tipo === "documento" && c.document_id ? (
@@ -567,10 +675,7 @@ export default function ChatPage({
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) {
-              setTexto(file.name);
-              sendMedia();
-            }
+            if (file) sendMedia();
           }}
         />
         {subiendoImg && <p className="text-xs" style={{ color: "#6b7280" }}>Subiendo archivo...</p>}

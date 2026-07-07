@@ -12,6 +12,7 @@ interface Lead {
   nombre: string | null;
   telefono: string | null;
   calificacion: string | null;
+  etapa: string | null;
   asignado_nombre: string | null;
   notas: string | null;
   creado: string;
@@ -24,10 +25,22 @@ interface Calificacion {
   orden: number;
 }
 
+const etapaColores: Record<string, { bg: string; text: string }> = {
+  nuevo: { bg: "#e3f2fd", text: "#1565c0" },
+  contactado: { bg: "#fff3e0", text: "#e65100" },
+  calificado: { bg: "#f3e5f5", text: "#7b1fa2" },
+  convertido: { bg: "#e8f5e9", text: "#2e7d32" },
+  seguimiento: { bg: "#fce4ec", text: "#c62828" },
+  perdido: { bg: "#eeeeee", text: "#616161" },
+};
+
+const etapas = ["nuevo", "contactado", "calificado", "convertido", "seguimiento", "perdido"];
+
 export default function LeadsPage() {
   const router = useRouter();
   const sp = useSearchParams();
-  const filtro = sp.get("calificacion") ?? "";
+  const filtroCal = sp.get("calificacion") ?? "";
+  const filtroEtapa = sp.get("etapa") ?? "";
   const activeRef = useRef(true);
 
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -49,7 +62,8 @@ export default function LeadsPage() {
     async function fetchData() {
       try {
         const params = new URLSearchParams();
-        if (filtro) params.set("calificacion", filtro);
+        if (filtroCal) params.set("calificacion", filtroCal);
+        if (filtroEtapa) params.set("etapa", filtroEtapa);
         const data = await apiGet<Lead[]>(`/leads?${params}`);
         if (activeRef.current) setLeads(data);
       } catch {}
@@ -60,7 +74,7 @@ export default function LeadsPage() {
       activeRef.current = false;
       clearInterval(interval);
     };
-  }, [filtro]);
+  }, [filtroCal, filtroEtapa]);
 
   async function cambiarCalificacion(id: number, valor: string) {
     try {
@@ -71,36 +85,48 @@ export default function LeadsPage() {
     } catch {}
   }
 
+  async function cambiarEtapa(id: number, valor: string) {
+    try {
+      await apiPatch(`/leads/${id}`, { etapa: valor });
+      setLeads((prev) =>
+        prev.map((l) => (l.id === id ? { ...l, etapa: valor } : l))
+      );
+    } catch {}
+  }
+
+  function actualizarFiltros(cal: string, etapa: string) {
+    const p = new URLSearchParams();
+    if (cal) p.set("calificacion", cal);
+    if (etapa) p.set("etapa", etapa);
+    router.push(`/app/leads?${p}`);
+  }
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold" style={{ color: "#003160" }}>Leads</h1>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const f = new FormData(e.currentTarget);
-            const p = new URLSearchParams();
-            if (f.get("calificacion")) p.set("calificacion", f.get("calificacion") as string);
-            router.push(`/app/leads?${p}`);
-          }}
-        >
+        <div className="flex gap-2">
           <select
-            name="calificacion"
-            defaultValue={filtro}
-            onChange={(e) => {
-              const p = new URLSearchParams();
-              if (e.target.value) p.set("calificacion", e.target.value);
-              router.push(`/app/leads?${p}`);
-            }}
+            value={filtroCal}
+            onChange={(e) => actualizarFiltros(e.target.value, filtroEtapa)}
             className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             style={{ borderColor: "#e5e5e5", color: "#464646" }}
           >
-            <option value="">Todas</option>
+            <option value="">Todas calificaciones</option>
             <option value="hot">Hot</option>
             <option value="warm">Warm</option>
             <option value="cold">Cold</option>
           </select>
-        </form>
+          <select
+            value={filtroEtapa}
+            onChange={(e) => actualizarFiltros(filtroCal, e.target.value)}
+            className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            style={{ borderColor: "#e5e5e5", color: "#464646" }}
+          >
+            <option value="">Todas etapas</option>
+            {etapas.map(e => <option key={e} value={e}>{e}</option>)}
+          </select>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border bg-white" style={{ borderColor: "#e5e5e5" }}>
@@ -109,6 +135,7 @@ export default function LeadsPage() {
             <tr style={{ background: "#003160" }}>
               <th className="px-4 py-3 text-left font-medium text-white">Nombre</th>
               <th className="px-4 py-3 text-left font-medium text-white">Telefono</th>
+              <th className="px-4 py-3 text-left font-medium text-white">Etapa</th>
               <th className="px-4 py-3 text-left font-medium text-white">Calificacion</th>
               <th className="px-4 py-3 text-left font-medium text-white">Asignado</th>
               <th className="px-4 py-3 text-left font-medium text-white">Creado</th>
@@ -117,6 +144,7 @@ export default function LeadsPage() {
           <tbody>
             {leads.map((l) => {
               const cal = calificaciones.find(c => c.nombre === l.calificacion);
+              const etCol = etapaColores[l.etapa ?? "nuevo"] ?? { bg: "#f5f5f5", text: "#464646" };
               return (
                 <tr key={l.id} className="border-b transition-colors hover:bg-gray-50" style={{ borderColor: "#f0f0f0" }}>
                   <td className="px-4 py-3 font-medium">
@@ -129,6 +157,17 @@ export default function LeadsPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3" style={{ color: "#464646" }}>{l.telefono}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={l.etapa ?? "nuevo"}
+                      onChange={(e) => cambiarEtapa(l.id, e.target.value)}
+                      className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium capitalize focus:outline-none"
+                      aria-label="Cambiar etapa"
+                      style={{ background: etCol.bg, color: etCol.text, border: "none" }}
+                    >
+                      {etapas.map(e => <option key={e} value={e}>{e}</option>)}
+                    </select>
+                  </td>
                   <td className="px-4 py-3">
                     <select
                       value={l.calificacion ?? ""}

@@ -28,6 +28,7 @@ CREATE TABLE lg_usuarios (
     email           NVARCHAR(200)   NULL,
     agencia_id      INT             NOT NULL REFERENCES lg_agencias(id),
     rol             NVARCHAR(20)    NOT NULL DEFAULT 'agent' CHECK (rol IN ('agent','supervisor','admin','flow_admin','superadmin')),
+    rol_id          INT             NOT NULL REFERENCES lg_roles(id),
     creado          DATETIME2       NOT NULL DEFAULT GETDATE(),
     actualizado     DATETIME2       NOT NULL DEFAULT GETDATE(),
     activo           BIT             NOT NULL DEFAULT 1,
@@ -53,6 +54,7 @@ CREATE TABLE lg_conversaciones (
     leido_por           INT             NULL REFERENCES lg_usuarios(id),
     ultima_lectura      DATETIME2       NULL,
     motivo_cierre       NVARCHAR(500)   NULL,
+    cerrado_por         INT             NULL REFERENCES lg_usuarios(id),
     creado              DATETIME2       NOT NULL DEFAULT GETDATE(),
     actualizado         DATETIME2       NOT NULL DEFAULT GETDATE()
 );
@@ -170,6 +172,34 @@ CREATE TABLE lg_estados_transiciones (
     evento          NVARCHAR(50)    NOT NULL,
     descripcion     NVARCHAR(200)   NULL,
     activo          BIT             NOT NULL DEFAULT 1
+);
+
+-- Tabla: roles
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_roles' AND xtype='U')
+CREATE TABLE lg_roles (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    nombre          NVARCHAR(50)    NOT NULL UNIQUE,
+    jerarquia       INT             NOT NULL DEFAULT 0,
+    descripcion     NVARCHAR(200)   NULL,
+    creado          DATETIME2       NOT NULL DEFAULT GETDATE()
+);
+
+-- Tabla: permisos
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_permisos' AND xtype='U')
+CREATE TABLE lg_permisos (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    codigo          NVARCHAR(50)    NOT NULL UNIQUE,
+    descripcion     NVARCHAR(200)   NULL,
+    creado          DATETIME2       NOT NULL DEFAULT GETDATE()
+);
+
+-- Tabla: roles_permisos (asignacion)
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='lg_roles_permisos' AND xtype='U')
+CREATE TABLE lg_roles_permisos (
+    id              INT IDENTITY(1,1) PRIMARY KEY,
+    rol_id          INT NOT NULL REFERENCES lg_roles(id),
+    permiso_id      INT NOT NULL REFERENCES lg_permisos(id),
+    CONSTRAINT UQ_lg_roles_permisos UNIQUE (rol_id, permiso_id)
 );
 
 -- Tabla: cache de atribucion de anuncios

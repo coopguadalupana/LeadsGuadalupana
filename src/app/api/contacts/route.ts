@@ -69,6 +69,10 @@ export async function PATCH(req: NextRequest) {
 
   // If no rows updated, insert new
   if (result.rowsAffected[0] === 0) {
+    paramsObj.nombre ??= null;
+    paramsObj.dpi ??= null;
+    paramsObj.etiquetas ??= null;
+    paramsObj.notas ??= null;
     await execute(
       `INSERT INTO lg_contactos (agencia_id, telefono, nombre, dpi, etiquetas, notas)
        VALUES (@agenciaId, @telefono, @nombre, @dpi, @etiquetas, @notas)`,

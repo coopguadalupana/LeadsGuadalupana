@@ -9,6 +9,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const calificacion = searchParams.get("calificacion");
   const asignado = searchParams.get("asignado");
+  const etapa = searchParams.get("etapa");
+  const conversacionId = searchParams.get("conversacion_id");
 
   let sql = `SELECT l.*, u.nombre AS asignado_nombre, c.plataforma
              FROM lg_leads l
@@ -21,9 +23,17 @@ export async function GET(req: NextRequest) {
     sql += ` AND l.calificacion = @calificacion`;
     params.calificacion = calificacion;
   }
+  if (etapa) {
+    sql += ` AND l.etapa = @etapa`;
+    params.etapa = etapa;
+  }
   if (asignado === "me") {
     sql += ` AND l.asignado_a = @userId`;
     params.userId = Number(auth.user.id);
+  }
+  if (conversacionId) {
+    sql += ` AND l.conversacion_id = @convId`;
+    params.convId = Number(conversacionId);
   }
 
   sql += ` ORDER BY l.creado DESC`;
