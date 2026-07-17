@@ -82,7 +82,21 @@ export async function getAdAttribution(adId: string): Promise<AttributionResult 
       agency_id: agencyId,
     };
   } catch (err) {
-    console.error(`Ad attribution failed for ${adId}:`, err);
+    // Cachear el fallo con campaign_id vacío para no reintentar en cada mensaje
+    // y evitar que el log se llene de errores repetidos para el mismo ad_id.
+    // El cache sin agency_id simplemente no redirige la conversación (queda en agencia_default).
+    try {
+      await execute(
+        `IF NOT EXISTS (SELECT 1 FROM lg_ads_cache WHERE ad_id = @adId)
+         INSERT INTO lg_ads_cache (ad_id, campaign_id, campaign_name, ad_name, agency_id, es_manual)
+         VALUES (@adId, '', NULL, NULL, NULL, 0)`,
+        { adId }
+      );
+    } catch {
+      // Si el insert falla (race condition), ignorar
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[ADS] Attribution no disponible para ad_id=${adId}: ${msg}`);
     return null;
   }
 }

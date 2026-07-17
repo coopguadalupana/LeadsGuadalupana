@@ -21,6 +21,9 @@ export const authOptions: NextAuthOptions = {
         );
         if (!ldapUser) return null;
 
+        const sam = ldapUser.sAMAccountName;
+        const upn = ldapUser.userPrincipalName ?? "";
+
         const usuarios = await query<{
           id: number;
           agencia_id: number;
@@ -33,11 +36,18 @@ export const authOptions: NextAuthOptions = {
            FROM lg_usuarios u
            JOIN lg_agencias a ON a.id = u.agencia_id
            WHERE (u.ldap_sam = @sam OR u.ldap_sam = @upn)`,
-          { sam: ldapUser.sAMAccountName, upn: ldapUser.userPrincipalName ?? "" }
+          { sam, upn }
         );
 
-        if (usuarios.length === 0) return null;
-        if (!usuarios[0]!.activo) return null;
+        if (usuarios.length === 0) {
+          console.warn(`[AUTH] Login fallido: LDAP OK pero usuario no existe en lg_usuarios. sam='${sam}' upn='${upn}'`);
+          return null;
+        }
+        if (!usuarios[0]!.activo) {
+          console.warn(`[AUTH] Login fallido: usuario '${sam}' existe en lg_usuarios pero está inactivo (id=${usuarios[0]!.id}).`);
+          return null;
+        }
+        console.log(`[AUTH] Login exitoso: '${sam}' → agencia_id=${usuarios[0]!.agencia_id} rol=${usuarios[0]!.rol}`);
 
         return {
           id: String(usuarios[0]!.id),

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { canManageFlowsSync, canManageUsersSync } from "@/lib/auth/permissions-client";
+import { canManageFlowsSync, canManageUsersSync, canViewAllConversationsSync } from "@/lib/auth/permissions-client";
 
 export default function Sidebar({
   userName,
@@ -19,6 +19,7 @@ export default function Sidebar({
     { href: "/app/leads", label: "Leads", icon: "👤", show: true },
     { href: "/app/dashboard", label: "Dashboard", icon: "📊", show: true },
     { href: "/app/ads", label: "Rendimiento", icon: "📈", show: true },
+    { href: "/app/reportes", label: "Reportes", icon: "📋", show: canViewAllConversationsSync(rol) },
     { href: "/app/flows", label: "Flujos", icon: "⚙️", show: canManageFlowsSync(rol) },
     { href: "/app/ads-config", label: "Anuncios", icon: "📢", show: canManageUsersSync(rol) },
     { href: "/app/usuarios", label: "Usuarios", icon: "👥", show: canManageUsersSync(rol) },

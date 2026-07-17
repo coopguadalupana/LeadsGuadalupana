@@ -44,12 +44,15 @@ export async function POST() {
         res.on("searchEntry", (entry: any) => {
           const dn = entry.dn.toString();
           const get = (name: string) => entry.attributes.find((a: any) => a.type?.toLowerCase() === name.toLowerCase())?.values?.[0];
-          const ouMatch = dn.match(/^OU=([^,]+)/);
+          // Los DNs de AD empiezan con CN=, no con OU=. Hay que buscar el primer OU dentro del DN.
+          // Ej: "CN=Juan Lopez,OU=Agencia Norte,OU=Gerencia Negocios,DC=guadalupana,..."
+          const firstOu = dn.split(",").find((p: string) => p.trim().toUpperCase().startsWith("OU="));
+          const ou = firstOu ? firstOu.trim().slice(3) : "";
           items.push({
             sam: get("sAMAccountName") ?? "",
             nombre: get("displayName") ?? get("cn") ?? "",
             mail: get("mail") ?? "",
-            ou: ouMatch ? ouMatch[1] : "",
+            ou,
           });
         });
         res.on("end", () => resolve(items));
