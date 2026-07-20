@@ -255,6 +255,35 @@ Basado en `cooperativaguadalupana.com.gt`:
 | Gris      | `#6b7280` | Texto secundario             |
 | Fondo     | `#f5f5f5` | Background principal         |
 
+## Flow Engine — Detalles de implementación
+
+### Inicio de flujo (trigger matching)
+
+`src/lib/flows/integration.ts:processMessage()` se llama desde el webhook POST tras guardar cada mensaje entrante.
+
+**Flujo de decisión:**
+1. Si la conversación está `en_curso` (atendida por humano), no ejecuta flows
+2. Si hay un `flow_state` activo, continúa ejecutando el flow existente
+3. Sin flow activo: busca flows activos para `agencia_id` del mensaje; si no encuentra, **fallback a todas las agencias**
+
+**Reglas de trigger matching** (`src/lib/flows/engine.ts:matchTrigger`):
+- Coincidencia de keywords: `lowerTexto.includes(kw.toLowerCase())`
+- Coincidencia de regex: `new RegExp(rx, "i").test(lowerTexto)`
+- El flow debe tener `activo = true` (antes se creaba inactivo por defecto)
+
+### Flows creados activos por defecto
+
+`src/app/api/flows/route.ts` — Al crear un flow via POST, `activo` ahora defaults a `true` (antes `false`).
+
+### Editor visual de flujos
+
+`src/components/flows/FlowBuilder.tsx` — Editor drag & drop con React Flow v12.
+
+**Bugs corregidos:**
+- **Texto se revertía al escribir**: `selectedNode` era una referencia obsoleta. Ahora se usa `selectedNodeId` (string) y `liveSelectedNode` derivado de `nodes.find()` desde el estado vivo de React Flow.
+- **Conexiones Si/No sin color**: `onConnect` ahora lee `connection.sourceHandle` y aplica verde (`#27a536`) o rojo (`#cf2e2e`).
+- **Panel persistía al borrar nodo**: handler `onNodesDelete` limpia `selectedNodeId`.
+
 ## Cliente API
 
 `src/lib/client-api.ts` — Helper que detecta el basePath (`/leads` o `/agencia`) desde `window.location.pathname` y construye las URLs correctas. Usar `apiGet()`, `apiPost()`, `apiPatch()`, `apiPut()`, `apiDelete()` en lugar de `fetch()` directo.

@@ -41,7 +41,7 @@ export async function processMessage(
   if (convs.length === 0) return;
   const conv = convs[0]!;
 
-  if (conv.estado === "en_espera" || conv.estado === "en_curso") return;
+  if (conv.estado === "en_curso") return;
 
   let currentState: FlowState | null = conv.flow_state
     ? JSON.parse(conv.flow_state)
@@ -83,16 +83,24 @@ export async function processMessage(
     { agenciaId }
   );
 
-  console.log("processMessage: buscando flows activos para agencia", agenciaId, "mensaje:", mensajeTexto);
-  console.log("processMessage: flows encontrados:", raw.length);
+  console.log(`[FLOW] processMessage: agenciaId=${agenciaId} mensaje="${mensajeTexto}" flows_encontrados=${raw.length}`);
 
-  for (const row of raw) {
+  const allRows = raw.length > 0
+    ? raw
+    : await query<Record<string, unknown>>(
+        `SELECT * FROM lg_flows WHERE activo = 1 ORDER BY version DESC`
+      );
+
+  if (allRows.length > raw.length) {
+    console.log(`[FLOW] Fallback: buscando en todas las agencias (${allRows.length} flows activos)`);
+  }
+
+  for (const row of allRows) {
     const flow = parseFlow(row);
     const match = matchTrigger(flow, mensajeTexto);
-    console.log("processMessage: evaluando flow", flow.nombre, "match:", match);
+    console.log(`[FLOW] Evaluando: "${flow.nombre}" (agencia=${flow.agencia_id}) match=${match}`);
     if (match) {
-      console.log("processMessage: flow disparado!", flow.nombre);
-      // Cambiar a estado auto_respondiendo
+      console.log(`[FLOW] Disparado: "${flow.nombre}"`);
       await transitionState(conversacionId, "flow_match");
       currentState = createInitialState(flow);
       const { newState, finalizado } = await executeFlow(
@@ -102,7 +110,7 @@ export async function processMessage(
         waId,
         mensajeTexto
       );
-      console.log("processMessage: ejecucion completada, finalizado:", finalizado);
+      console.log(`[FLOW] Ejecucion completada, finalizado: ${finalizado}`);
       currentState = finalizado ? null : newState;
       await saveState(conversacionId, currentState);
       return;
