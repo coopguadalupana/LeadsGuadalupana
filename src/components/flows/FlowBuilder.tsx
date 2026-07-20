@@ -144,7 +144,7 @@ export default function FlowBuilder({
   const [nombre, setNombre] = useState(initialNombre);
   const [trigger, setTrigger] = useState<FlowTrigger>(initialTrigger);
   const [showTriggerPanel, setShowTriggerPanel] = useState(!initialPasos.length);
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   const initialNodes = useMemo(
@@ -156,6 +156,11 @@ export default function FlowBuilder({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  const selectedNode = useMemo(
+    () => nodes.find((n) => n.id === selectedNodeId) ?? null,
+    [nodes, selectedNodeId]
+  );
+
   useEffect(() => {
     setNodes(initialPasos.map((p, i) => pasoToNode(p, i)));
     setEdges(flowToEdges(initialPasos));
@@ -163,12 +168,19 @@ export default function FlowBuilder({
 
   const onConnect = useCallback(
     (connection: Connection) => {
+      const stroke =
+        connection.sourceHandle === "si" ? "#27a536" :
+        connection.sourceHandle === "no" ? "#cf2e2e" :
+        "#6b7280";
       setEdges((eds) =>
         addEdge(
           {
             ...connection,
             markerEnd: { type: MarkerType.ArrowClosed },
-            style: { stroke: "#6b7280" },
+            style: { stroke },
+            label: connection.sourceHandle === "si" ? "Si" :
+                   connection.sourceHandle === "no" ? "No" :
+                   undefined,
           },
           eds
         )
@@ -290,8 +302,9 @@ export default function FlowBuilder({
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
-          onNodeClick={(_, node) => setSelectedNode(node)}
-          onPaneClick={() => setSelectedNode(null)}
+          onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+          onPaneClick={() => setSelectedNodeId(null)}
+          onNodesDelete={() => setSelectedNodeId(null)}
           nodeTypes={nodeTypes}
           fitView
           deleteKeyCode={["Backspace", "Delete"]}
@@ -321,7 +334,7 @@ export default function FlowBuilder({
               nds.map((n) => (n.id === updated.id ? { ...n, data: updated.data } : n))
             );
           }}
-          onClose={() => setSelectedNode(null)}
+          onClose={() => setSelectedNodeId(null)}
         />
       )}
 

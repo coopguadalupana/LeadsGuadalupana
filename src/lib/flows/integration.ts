@@ -41,7 +41,7 @@ export async function processMessage(
   if (convs.length === 0) return;
   const conv = convs[0]!;
 
-  if (conv.estado === "en_espera" || conv.estado === "en_curso") return;
+  if (conv.estado === "en_curso") return;
 
   let currentState: FlowState | null = conv.flow_state
     ? JSON.parse(conv.flow_state)
@@ -77,11 +77,22 @@ export async function processMessage(
   }
 
   // Sin flow activo: buscar flow que coincida con el trigger
-  const raw = await query<Record<string, unknown>>(
+  let raw = await query<Record<string, unknown>>(
     `SELECT * FROM lg_flows WHERE agencia_id = @agenciaId AND activo = 1
      ORDER BY version DESC`,
     { agenciaId }
   );
+
+  // Fallback: si el mensaje se atribuyó a agencia_default pero no hay flows allí,
+  // buscar en todas las agencias activas
+  if (raw.length === 0) {
+    raw = await query<Record<string, unknown>>(
+      `SELECT f.* FROM lg_flows f
+       JOIN lg_agencias a ON a.id = f.agencia_id
+       WHERE f.activo = 1 AND a.activa = 1
+       ORDER BY f.agencia_id, f.version DESC`
+    );
+  }
 
   console.log("processMessage: buscando flows activos para agencia", agenciaId, "mensaje:", mensajeTexto);
   console.log("processMessage: flows encontrados:", raw.length);

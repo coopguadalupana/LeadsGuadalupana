@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       {
         agenciaId: auth.user.agencia_id,
         nombre: body.nombre,
-        activo: body.activo ?? false,
+        activo: body.activo ?? true,
         trigger: JSON.stringify(body.trigger ?? {}),
         pasos: JSON.stringify(body.pasos ?? []),
       }
