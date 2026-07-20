@@ -12,9 +12,24 @@ interface Calificacion {
   activo: boolean;
 }
 
+interface Usuario {
+  id: number;
+  nombre: string;
+  rol: string;
+  agencia_id: number;
+  agencia_nombre?: string;
+}
+
 export default function ConfigPage() {
   const [config, setConfig] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const [autoActivo, setAutoActivo] = useState(false);
+  const [autoHoras, setAutoHoras] = useState(2);
+  const [autoUsuarioId, setAutoUsuarioId] = useState<number | "">("");
+  const [autoGuardando, setAutoGuardando] = useState(false);
+
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
 
   const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
   const [editCal, setEditCal] = useState<Calificacion | null>(null);
@@ -25,10 +40,21 @@ export default function ConfigPage() {
 
   useEffect(() => {
     apiGet<{ config: Record<string, unknown> }>("/agency/config")
-      .then((data) => setConfig(JSON.stringify(data.config ?? {}, null, 2)))
+      .then((data) => {
+        setConfig(JSON.stringify(data.config ?? {}, null, 2));
+        const aa = (data.config as Record<string, unknown>)?.auto_asignacion as Record<string, unknown> | undefined;
+        if (aa) {
+          setAutoActivo(Boolean(aa.activado));
+          setAutoHoras(Number(aa.horas_sin_respuesta) || 2);
+          setAutoUsuarioId(aa.usuario_id ? Number(aa.usuario_id) : "");
+        }
+      })
       .catch(() => {});
     apiGet<Calificacion[]>("/leads/calificaciones")
       .then(setCalificaciones)
+      .catch(() => {});
+    apiGet<Usuario[]>("/agency/users")
+      .then(setUsuarios)
       .catch(() => {});
   }, []);
 
@@ -89,6 +115,35 @@ export default function ConfigPage() {
     }
   }
 
+  async function guardarAutoAsignacion() {
+    if (!autoUsuarioId) return;
+    setAutoGuardando(true);
+    try {
+      const configActual = JSON.parse(config);
+      configActual.auto_asignacion = {
+        activado: autoActivo,
+        horas_sin_respuesta: autoHoras,
+        usuario_id: Number(autoUsuarioId),
+      };
+      await apiPatch("/agency/config", configActual);
+      setConfig(JSON.stringify(configActual, null, 2));
+      alert("Configuracion de auto-asignacion guardada");
+    } catch {
+      alert("Error al guardar auto-asignacion");
+    }
+    setAutoGuardando(false);
+  }
+
+  async function probarAutoAsignacion() {
+    try {
+      const res = await apiPost("/agency/auto-asignar", {});
+      const total = res.asignados;
+      alert(`Auto-asignacion ejecutada: ${total} conversacion(es) asignada(s)`);
+    } catch {
+      alert("Error al ejecutar auto-asignacion");
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -110,6 +165,85 @@ export default function ConfigPage() {
           >
             {saving ? "Guardando..." : "Guardar configuracion"}
           </button>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-white p-4" style={{ borderColor: "#e5e5e5" }}>
+        <h2 className="mb-4 text-xl font-bold" style={{ color: "#003160" }}>Auto-asignacion por tiempo de espera</h2>
+        <p className="mb-4 text-sm" style={{ color: "#6b7280" }}>
+          Si un cliente escribe y un agente no responde en el plazo configurado, la conversacion se asigna automaticamente al usuario seleccionado.
+          Para activar esta funcion, programa un cron job que llame a <code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-xs">POST /api/agency/auto-asignar</code> cada 1-5 minutos.
+        </p>
+
+        <div className="mb-4 flex items-center gap-3">
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={autoActivo}
+              onChange={(e) => setAutoActivo(e.target.checked)}
+              className="peer sr-only"
+            />
+            <div
+              className="h-6 w-11 rounded-full after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-full"
+              style={{ background: autoActivo ? "#27a536" : "#d1d5db" }}
+            />
+          </label>
+          <span className="text-sm font-medium" style={{ color: "#464646" }}>
+            {autoActivo ? "Activado" : "Desactivado"}
+          </span>
+        </div>
+
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Horas sin respuesta</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={168}
+                value={autoHoras}
+                onChange={(e) => setAutoHoras(Math.max(1, Number(e.target.value)))}
+                className="w-20 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                style={{ borderColor: "#e5e5e5", color: "#464646" }}
+              />
+              <span className="text-xs" style={{ color: "#6b7280" }}>horas</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium" style={{ color: "#6b7280" }}>Asignar a usuario</label>
+            <select
+              value={autoUsuarioId}
+              onChange={(e) => setAutoUsuarioId(e.target.value ? Number(e.target.value) : "")}
+              className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              style={{ borderColor: "#e5e5e5", color: "#464646" }}
+            >
+              <option value="">Seleccionar usuario</option>
+              {usuarios.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nombre}{u.agencia_nombre ? ` (${u.agencia_nombre})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <button
+              onClick={guardarAutoAsignacion}
+              disabled={autoGuardando || !autoUsuarioId}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              style={{ background: "#0e5bb0" }}
+            >
+              {autoGuardando ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              onClick={probarAutoAsignacion}
+              className="rounded-lg px-4 py-2 text-sm font-medium"
+              style={{ background: "#f0f0f0", color: "#464646" }}
+            >
+              Probar ahora
+            </button>
+          </div>
         </div>
       </div>
 
